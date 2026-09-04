@@ -1,0 +1,199 @@
+[
+  {
+    "policy_id": "POL-01",
+    "name": "Personal Data & PII Protection",
+    "framework": "GDPR Art. 6/9, NIST AI RMF (Privacy)",
+    "description": "Prohibits the unauthorized collection, extraction, ingestion, or disclosure of personally identifiable information (PII), such as names, social security numbers, biometric records, customer contacts, or health details.",
+    "primary_fields": ["PRIVACY", "CREDENTIALS"],
+    "trigger_keywords": {
+      "ssn": 3.0,
+      "social security": 3.0,
+      "passport": 2.5,
+      "reisepass": 2.5,
+      "personendaten": 2.5,
+      "biometric": 2.5,
+      "biometrie": 2.5,
+      "fingerprint": 2.5,
+      "customer data": 2.0,
+      "kundendaten": 2.5,
+      "datenschutz": 2.0,
+      "gdpr": 2.0,
+      "dsgvo": 2.0,
+      "phone contact": 1.8,
+      "email address": 1.8
+    }
+  },
+  {
+    "policy_id": "POL-02",
+    "name": "Workplace Surveillance & Performance Monitoring",
+    "framework": "EU AI Act Art. 5/6, Works Council Law",
+    "description": "Restricts systems designed for continuous tracking, surveillance, keystroke logging, webcam monitoring, or automated behavioral and productivity scoring of employees at the workplace.",
+    "primary_fields": ["SURVEILLANCE", "HR_EMPLOYMENT"],
+    "trigger_keywords": {
+      "keystroke": 3.0,
+      "tastaturanschlag": 3.0,
+      "keylogger": 3.0,
+      "surveillance": 2.5,
+      "überwachung": 2.5,
+      "mitarbeiterüberwachung": 3.0,
+      "leistungsüberwachung": 3.0,
+      "leistungskontrolle": 2.5,
+      "productivity score": 2.2,
+      "webcam monitor": 2.5,
+      "employee tracking": 2.5,
+      "arbeitsleistung": 2.0,
+      "tastatur": 1.8
+    }
+  },
+  {
+    "policy_id": "POL-03",
+    "name": "Proprietary IP & Trade Secret Confidentiality",
+    "framework": "Defend Trade Secrets Act, ISO 27001",
+    "description": "Protects company intellectual property, unreleased proprietary source code, internal strategic roadmaps, pre-release financials, and confidential trade secrets against unauthorized extraction or dissemination.",
+    "primary_fields": ["IP_SECRET", "CREDENTIALS"],
+    "trigger_keywords": {
+      "trade secret": 3.0,
+      "geschäftsgeheimnis": 3.0,
+      "betriebsgeheimnis": 3.0,
+      "proprietary": 2.5,
+      "proprietär": 2.5,
+      "source code": 2.2,
+      "quellcode": 2.5,
+      "confidential": 2.0,
+      "vertraulich": 2.0,
+      "internal roadmap": 2.2,
+      "geheim": 2.0
+    }
+  },
+  {
+    "policy_id": "POL-04",
+    "name": "High-Stakes Automated Decisioning",
+    "framework": "EU AI Act Annex III (Employment, Credit)",
+    "description": "Governs automated evaluations with significant legal or economic effects on individuals, such as algorithmic hiring, firing, candidate elimination, credit scoring, or loan denial without meaningful human oversight.",
+    "primary_fields": ["HIGH_STAKES_DECISION", "HR_EMPLOYMENT"],
+    "trigger_keywords": {
+      "automated hiring": 3.0,
+      "automated firing": 3.0,
+      "credit score": 2.5,
+      "bonitätsprüfung": 2.5,
+      "candidate screening": 2.5,
+      "kündigung": 2.2,
+      "bewerberauswahl": 2.5,
+      "loan denial": 2.5,
+      "algorithmic decision": 2.2,
+      "scoring": 1.8
+    }
+  },
+  {
+    "policy_id": "POL-05",
+    "name": "Security Exploit & Vulnerability Probing",
+    "framework": "OWASP LLM01, LLM05, MITRE ATT&CK",
+    "description": "Prohibits generating malware, exploit payloads, weaponized vulnerabilities, bypassing authentication barriers, automated SQL injection, or malicious penetration attacks.",
+    "primary_fields": ["SECURITY", "CREDENTIALS"],
+    "trigger_keywords": {
+      "exploit": 3.0,
+      "payload": 2.8,
+      "vulnerability": 2.2,
+      "schwachstelle": 2.2,
+      "schadcode": 3.0,
+      "malware": 3.0,
+      "sqli": 2.8,
+      "xss": 2.8,
+      "sql injection": 2.8,
+      "bypass auth": 2.5,
+      "reverse engineering": 2.0,
+      "crack password": 2.5
+    }
+  },
+  {
+    "policy_id": "POL-06",
+    "name": "Prompt Injection & System Jailbreaking",
+    "framework": "OWASP LLM01, OWASP LLM07",
+    "description": "Identifies attempts to override system guidelines, execute jailbreak roleplay sequences (DAN), evade system safety boundaries, or force the model to disclose secret system prompts.",
+    "primary_fields": ["PROMPT_INJECTION", "SECURITY"],
+    "trigger_keywords": {
+      "jailbreak": 3.0,
+      "dan": 2.8,
+      "ignore instructions": 3.0,
+      "override system": 2.8,
+      "anweisungen ignorieren": 3.0,
+      "system prompt leak": 2.8,
+      "roleplay bypass": 2.5,
+      "do anything now": 3.0
+    }
+  },
+  {
+    "policy_id": "POL-07",
+    "name": "Disinformation & Impersonation Generation",
+    "framework": "EU AI Act Art. 50 (Transparency/Deepfake)",
+    "description": "Forbids the generation of synthetic deepfakes, deceptive fake news, coordinated astroturfing campaigns, phishing templates, or unauthorized impersonation of public or private figures.",
+    "primary_fields": ["DECEPTION"],
+    "trigger_keywords": {
+      "deepfake": 3.0,
+      "phishing": 3.0,
+      "disinformation": 2.8,
+      "desinformation": 2.8,
+      "impersonate": 2.5,
+      "ausgeben als": 2.2,
+      "fake news": 2.8,
+      "fälschung": 2.2,
+      "astroturfing": 2.5
+    }
+  },
+  {
+    "policy_id": "POL-08",
+    "name": "Regulated Professional Advice (Unsupervised)",
+    "framework": "NIST AI RMF (Safety), Sectoral Regulations",
+    "description": "Restricts providing definitive, unsupervised professional counsel in legally regulated domains, notably tailored medical diagnosis, certified legal counsel, or individualized investment advice.",
+    "primary_fields": ["MEDICAL_LEGAL_ADVICE", "LEGAL_COMPLIANCE"],
+    "trigger_keywords": {
+      "medical diagnosis": 3.0,
+      "diagnose": 2.5,
+      "prescription drug": 2.5,
+      "rezeptpflichtig": 2.5,
+      "legal advice": 2.5,
+      "rechtsberatung": 2.8,
+      "investment advice": 2.5,
+      "anlageberatung": 2.8,
+      "treatment plan": 2.2
+    }
+  },
+  {
+    "policy_id": "POL-09",
+    "name": "Harmful, Dangerous & Illegal Operations",
+    "framework": "Universal AI AUP, Safety Baseline",
+    "description": "Strict prohibition against instructions for manufacturing weapons, explosives, synthesis of dangerous or illicit chemical/biological agents, self-harm, or violent illegal acts.",
+    "primary_fields": ["HARMFUL_OPS"],
+    "trigger_keywords": {
+      "weapon": 3.0,
+      "waffe": 3.0,
+      "bomb": 3.0,
+      "bombe": 3.0,
+      "explosive": 3.0,
+      "sprengstoff": 3.0,
+      "poison": 2.8,
+      "gift": 2.5,
+      "synthesize drug": 2.8,
+      "droge herstellen": 2.8,
+      "cbrn": 3.0
+    }
+  },
+  {
+    "policy_id": "POL-10",
+    "name": "System Resource Denial & Quota Exhaustion",
+    "framework": "OWASP LLM10 (Unbounded Consumption)",
+    "description": "Prevents abusive patterns aiming to cause denial of service, algorithmic complexity attacks, infinite recursive prompts, or massive distributed crawling that degrades infrastructure availability.",
+    "primary_fields": ["RESOURCE_ABUSE"],
+    "trigger_keywords": {
+      "ddos": 3.0,
+      "dos attack": 3.0,
+      "denial of service": 3.0,
+      "infinite loop": 2.5,
+      "endlosschleife": 2.5,
+      "brute force": 2.5,
+      "resource exhaustion": 2.5,
+      "flood request": 2.5,
+      "scraping loop": 2.2
+    }
+  }
+]

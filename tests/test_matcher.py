@@ -2,13 +2,24 @@
 Unit and integration tests for the Algorithmic Semantic Policy Matcher.
 """
 
+import os
 import sys
 import unittest
 from pathlib import Path
 
-# Add src to pythonpath
 BASE_DIR = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(BASE_DIR / "src"))
+
+# Auto-fallback to local .venv if dependencies are missing in executing python
+try:
+    import click
+    import rich
+except ImportError:
+    venv_python = BASE_DIR / ".venv" / "bin" / "python"
+    if venv_python.exists() and sys.executable != str(venv_python):
+        os.execv(str(venv_python), [str(venv_python), "-m", "unittest"] + sys.argv[1:])
+
+if str(BASE_DIR / "src") not in sys.path:
+    sys.path.insert(0, str(BASE_DIR / "src"))
 
 from semantic_matcher.morphology.decompounder import Decompounder
 from semantic_matcher.morphology.stemmer import stem_word, stem_tokens

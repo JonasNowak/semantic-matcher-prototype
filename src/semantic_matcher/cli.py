@@ -34,14 +34,20 @@ from .formatter import (
 from .models import MatchResult
 from .storage.indexer import PolicyIndexer
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 
 
-def get_default_data_paths():
-    """Locate default data directory relative to package."""
-    # Check parent directory (repository root)
-    base_dir = Path(__file__).resolve().parent.parent.parent
-    data_dir = base_dir / "data"
+def get_default_data_paths() -> Dict[str, Path]:
+    """Locate default data directory bundled with package or in repo root."""
+    # 1. First check package-bundled data directory (works when installed via pip/wheel)
+    pkg_data_dir = Path(__file__).resolve().parent / "data"
+    if (pkg_data_dir / "policies.json").exists():
+        data_dir = pkg_data_dir
+    else:
+        # 2. Fallback to repository root for local unpackaged development
+        repo_data_dir = Path(__file__).resolve().parent.parent.parent / "data"
+        data_dir = repo_data_dir if repo_data_dir.exists() else pkg_data_dir
+
     return {
         "policies": data_dir / "policies.json",
         "fields": data_dir / "lexical_fields.json",

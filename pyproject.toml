@@ -1,14 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "semantic-prototype"
-version = "0.1.0"
-description = "Semantic Parser of west-germanic languages, allowing the association of snippets of text, mostly prompts, with semantic inventars regarding policies. The goal is to get match values in percent. This is achieved by morphological and semantic decomposition of the input text, and matching it to a pre-decomposed data base"
+name = "semantic-matcher"
+version = "0.2.0"
+description = "Deterministic algorithmic semantic & morphological policy matcher for natural language prompts"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Jonas Nowak" }
+]
+keywords = ["nlp", "governance", "policy-matching", "llm-guardrails", "morphology", "semantics"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
 dependencies = [
     "click>=8.1.0",
     "rich>=13.0.0",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "build>=1.0.0",
+    "wheel",
+]
+
+[project.urls]
+Homepage = "https://github.com/JonasNowak/semantic-matcher-prototype"
+Repository = "https://github.com/JonasNowak/semantic-matcher-prototype"
+
 [project.scripts]
 semantic-matcher = "semantic_matcher.cli:cli"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+semantic_matcher = ["data/*.json"]

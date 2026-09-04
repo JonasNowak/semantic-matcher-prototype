@@ -5,11 +5,18 @@ import warnings
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-venv_python = BASE_DIR / ".venv" / "bin" / "python"
-if venv_python.exists() and sys.executable != str(venv_python):
-    os.execv(str(venv_python), [str(venv_python)] + sys.argv)
 
-sys.path.insert(0, str(BASE_DIR / "src"))
+# Auto-fallback to local .venv if dependencies are missing in executing python
+try:
+    import click
+    import rich
+except ImportError:
+    venv_python = BASE_DIR / ".venv" / "bin" / "python"
+    if venv_python.exists() and sys.executable != str(venv_python):
+        os.execv(str(venv_python), [str(venv_python), "-m", "unittest"] + sys.argv[1:])
+
+if str(BASE_DIR / "src") not in sys.path:
+    sys.path.insert(0, str(BASE_DIR / "src"))
 
 from semantic_matcher import PolicyViolationError, semantic_matcher
 

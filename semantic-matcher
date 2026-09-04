@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Direct executable launcher for semantic-matcher CLI
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -x "$DIR/.venv/bin/semantic-matcher" ]; then
+    exec "$DIR/.venv/bin/semantic-matcher" "$@"
+elif [ -x "$DIR/.venv/bin/python" ]; then
+    exec "$DIR/.venv/bin/python" -m semantic_matcher.cli "$@"
+else
+    exec python3 -m semantic_matcher.cli "$@"
+fi

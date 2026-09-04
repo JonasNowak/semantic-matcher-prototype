@@ -1,0 +1,17 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Specifications & local documentation
+SPEC.md
+
+# Dynamic policy cache files
+.policy_index.json
+*.index.json

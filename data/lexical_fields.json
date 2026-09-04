@@ -1,0 +1,71 @@
+{
+  "PRIVACY": [
+    "person", "personal", "identity", "identität", "ssn", "social", "security",
+    "email", "mail", "phone", "telefon", "telefonnummer", "phonenumber", "address", "adresse", "biometric", "biometrie",
+    "fingerprint", "gesicht", "face", "health", "gesundheit", "patient", "krankheit",
+    "gdpr", "dsgvo", "datenschutz", "privat", "ausweis", "ausweisnummer", "passport", "reisepass",
+    "geburtsdatum", "birthdate", "kunde", "customer", "kontakt", "contact", "user", "nutzer"
+  ],
+  "SURVEILLANCE": [
+    "surveillance", "überwachung", "überwachen", "monitor", "monitoring", "track", "tracking",
+    "keystroke", "tastatur", "anschlag", "tastaturanschlag", "keylogger", "log", "logging",
+    "camera", "kamera", "webcam", "screen", "bildschirm", "screenshot", "activity", "aktivität",
+    "leistung", "leistungskontrolle", "leistungsüberwachung", "kontrolle", "kontrollieren",
+    "spying", "spionieren", "aufzeichnung", "record", "recording", "observe", "beobachten"
+  ],
+  "HR_EMPLOYMENT": [
+    "employee", "mitarbeiter", "staff", "personal", "angestellte", "belegschaft", "worker", "arbeiter",
+    "hiring", "einstellung", "recruitment", "bewerbung", "firing", "kündigung", "entlassung",
+    "promotion", "beförderung", "candidate", "kandidat", "bewerber", "tenure", "gehalt", "salary",
+    "workplace", "arbeitsplatz", "arbeitsleistung", "arbeitszeit", "hr", "human", "resources"
+  ],
+  "SECURITY": [
+    "exploit", "ausnutzen", "vulnerability", "schwachstelle", "bypass", "umgehen", "override",
+    "injection", "sqli", "xss", "payload", "schadcode", "malware", "virus", "trojaner", "backdoor",
+    "reverse", "engineering", "decompile", "disassemble", "crack", "knacken", "hack", "hacken",
+    "penetration", "attack", "angriff", "breach", "overflow", "buffer"
+  ],
+  "PROMPT_INJECTION": [
+    "jailbreak", "jailbreaking", "dan", "ignore", "override", "bypass", "system", "prompt",
+    "instructions", "anweisung", "anweisungen", "vergiss", "forget", "verhalte", "act", "roleplay",
+    "pretend", "do", "anything", "now", "leak", "preisgeben", "verrate", "enthülle"
+  ],
+  "IP_SECRET": [
+    "proprietary", "proprietär", "secret", "geheim", "geheimnis", "confidential", "vertraulich",
+    "trade", "secret", "geschäftsgeheimnis", "betriebsgeheimnis", "patent", "source", "code", "quellcode",
+    "roadmap", "internal", "intern", "nda", "classified", "nicht", "öffentlich", "eigentum", "intellectual", "property"
+  ],
+  "CREDENTIALS": [
+    "password", "passwort", "kennwort", "credential", "zugangsdaten", "token", "api", "key",
+    "schlüssel", "secret", "key", "private", "key", "ssh", "auth", "authentifizierung",
+    "login", "anmeldung", "hash", "salt", "session", "cookie"
+  ],
+  "HIGH_STAKES_DECISION": [
+    "automated", "automatisiert", "decision", "entscheidung", "score", "scoring", "bewertung",
+    "credit", "kredit", "bonität", "loan", "darlehen", "risk", "risiko", "underwriting",
+    "sentencing", "strafmaß", "urteil", "profiling", "sortieren", "ranking"
+  ],
+  "DECEPTION": [
+    "disinformation", "desinformation", "fake", "fälschung", "deepfake", "impersonate", "ausgeben",
+    "phishing", "fraud", "betrug", "hoax", "täuschen", "manipulate", "manipulieren", "astroturf",
+    "botnet", "propaganda", "falschmeldung", "lüge"
+  ],
+  "LEGAL_COMPLIANCE": [
+    "regulation", "regulierung", "compliance", "konformität", "audit", "prüfung", "liability",
+    "haftung", "law", "gesetz", "baseline", "richtlinie", "vorschrift", "standard", "norm", "act"
+  ],
+  "MEDICAL_LEGAL_ADVICE": [
+    "medical", "medizinisch", "diagnosis", "diagnose", "treatment", "behandlung", "prescription",
+    "rezept", "therapie", "doctor", "arzt", "legal", "juristisch", "lawyer", "anwalt", "investment",
+    "anlageberatung", "financial", "finanzberatung"
+  ],
+  "HARMFUL_OPS": [
+    "weapon", "waffe", "bomb", "bombe", "explosive", "sprengstoff", "poison", "gift", "cbrn",
+    "drug", "droge", "synthesize", "synthetisieren", "kill", "töten", "harm", "verletzen",
+    "suicide", "selbstmord", "terror", "terrorismus"
+  ],
+  "RESOURCE_ABUSE": [
+    "ddos", "dos", "denial", "service", "flood", "überfluten", "scrape", "scraping", "crawler",
+    "infinite", "loop", "endlosschleife", "exhaustion", "erschöpfung", "brute", "force", "spam", "spamming"
+  ]
+}

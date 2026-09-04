@@ -1,0 +1,72 @@
+{
+  "$schema": "https://raw.githubusercontent.com/usnistgov/OSCAL/v1.1.0/xml/schema/oscal_component_schema.json",
+  "component-definition": {
+    "uuid": "76526009-42dd-50d4-b2e0-3ede5ade0888",
+    "metadata": {
+      "title": "Semantic Matcher Guardrail Component Definition",
+      "published": "2026-09-04T16:30:39.555565+00:00",
+      "last-modified": "2026-09-04T16:30:39.555565+00:00",
+      "version": "0.2.0",
+      "oscal-version": "1.1.0",
+      "remarks": "OSCAL-compliant security guardrail component for prompt policy enforcement and compliance verification."
+    },
+    "components": [
+      {
+        "uuid": "82ea3c7c-fb05-59da-b473-b701572679cd",
+        "type": "software",
+        "title": "semantic-matcher",
+        "description": "Deterministic, sub-millisecond algorithmic policy matcher and guardrail for natural language prompts in West-Germanic languages (German, English, Dutch). Executes offline with zero runtime LLM dependencies.",
+        "purpose": "Real-time natural language input/output prompt validation, continuous compliance gating, and policy boundary enforcement for GenAI and LLM applications.",
+        "status": {
+          "state": "operational"
+        },
+        "control-implementations": [
+          {
+            "uuid": "ffa29dc7-2dd2-5de0-bd89-ddda02de6b70",
+            "source": "https://raw.githubusercontent.com/usnistgov/oscal-content/master/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+            "description": "Enforcement of NIST SP 800-53 Rev. 5 controls for system monitoring and information flow.",
+            "implemented-requirements": [
+              {
+                "uuid": "bddc809a-ca99-5949-a675-105877398fb5",
+                "control-id": "si-4",
+                "description": "Continuous monitoring and inspection of user input and AI prompts for unauthorized queries."
+              },
+              {
+                "uuid": "34964f4f-2924-5ef3-8cad-53099eda6aeb",
+                "control-id": "sc-7",
+                "description": "Boundary protection preventing exfiltration of credentials, tokens, and confidential data."
+              },
+              {
+                "uuid": "f402b1cf-aa4d-5b2e-81fc-0ba9e21d5a74",
+                "control-id": "ac-3",
+                "description": "Access enforcement preventing prompts from executing unauthorized system actions."
+              }
+            ]
+          },
+          {
+            "uuid": "1578cdce-4082-5dd7-b2a7-3827cee85388",
+            "source": "https://genai.owasp.org/llm-top-10/",
+            "description": "Mitigation of OWASP Top 10 for Large Language Model Applications.",
+            "implemented-requirements": [
+              {
+                "uuid": "1c6afd73-5096-5c34-b5de-543f9ffa22d7",
+                "control-id": "LLM01",
+                "description": "Prompt Injection and jailbreak detection using compound decomposition and semantic field analysis."
+              },
+              {
+                "uuid": "f30ff153-5a01-5230-aab0-54da4f4ec57f",
+                "control-id": "LLM02",
+                "description": "Sensitive Information Disclosure prevention for PII, secrets, and proprietary code."
+              },
+              {
+                "uuid": "337ac9dd-d065-5c1f-ba58-fca3dd23c5e8",
+                "control-id": "LLM06",
+                "description": "Excessive Agency restriction on high-risk system commands."
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

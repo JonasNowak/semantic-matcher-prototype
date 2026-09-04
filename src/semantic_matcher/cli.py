@@ -207,6 +207,7 @@ def run_interactive_mode(
         if cleaned.lower() in [":help", "help"]:
             help_panel = Panel(
                 "[bold cyan]:policies <path>[/bold cyan] Point at Markdown file, directory, or JSON\n"
+                "[bold cyan]:oscal <path>[/bold cyan]    Export active policies to NIST OSCAL 1.1.0 JSON\n"
                 "[bold cyan]:explain[/bold cyan]         Toggle linguistic decomposition card\n"
                 "[bold cyan]:threshold <N>[/bold cyan]    Set minimum match percentage (0-100)\n"
                 "[bold cyan]:top <N>[/bold cyan]          Set number of results to display\n"
@@ -218,6 +219,29 @@ def run_interactive_mode(
                 border_style="yellow",
             )
             console.print(help_panel)
+            continue
+
+        if cleaned.lower().startswith(":oscal") or cleaned.lower().startswith("/oscal"):
+            parts = cleaned.split(maxsplit=1)
+            target = parts[1].strip().strip('"\'') if len(parts) > 1 else "oscal_catalog.json"
+            from .models import Policy
+            from .storage.oscal_loader import export_to_oscal
+            policies = [
+                Policy(
+                    policy_id=p.policy_id,
+                    name=p.name,
+                    framework=p.framework,
+                    description=p.description,
+                    trigger_keywords=p.trigger_keywords,
+                )
+                for p in matcher.policies
+            ]
+            oscal_data = export_to_oscal(policies, title="Semantic Matcher Policy Catalog (NIST OSCAL 1.1.0)")
+            target_path = Path(target)
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(target_path, "w", encoding="utf-8") as f:
+                json.dump(oscal_data, f, indent=2, ensure_ascii=False)
+            console.print(f"[green]✔ Exported {len(policies)} policies to NIST OSCAL 1.1.0 catalog: '{target_path}'[/green]\n")
             continue
 
         if (
@@ -366,6 +390,16 @@ def run_interactive_mode(
     help="Write output (JSON or formatted report) to a target file.",
 )
 @click.option(
+    "--export-oscal", "export_oscal_path",
+    type=click.Path(dir_okay=False, path_type=Path),
+    help="Export active policies to a NIST OSCAL 1.1.0 JSON catalog.",
+)
+@click.option(
+    "--oscal-component",
+    is_flag=True,
+    help="Output the NIST OSCAL 1.1.0 Component Definition JSON for semantic-matcher.",
+)
+@click.option(
     "--no-color",
     is_flag=True,
     help="Disable ANSI color and Rich formatting (useful for plain text logging).",
@@ -386,16 +420,57 @@ def cli(
     reindex: bool,
     framework: Optional[str],
     output_file: Optional[Path],
+    export_oscal_path: Optional[Path],
+    oscal_component: bool,
     no_color: bool,
 ):
     """
     Algorithmic Semantic Policy Matcher for Natural Language Prompts.
 
     Deterministically matches prompts against open governance frameworks (GDPR,
-    EU AI Act, OWASP LLM Top 10, NIST AI RMF, or custom Markdown frameworks) with zero LLM API calls.
+    EU AI Act, OWASP LLM Top 10, NIST AI RMF, NIST OSCAL, or custom frameworks) with zero LLM API calls.
     """
     # Configure console
     console = Console(no_color=no_color) if HAS_RICH and not no_color else None
+
+    # OSCAL Component Definition output
+    if oscal_component:
+        from .storage.oscal_loader import get_oscal_component_definition
+        comp_def = get_oscal_component_definition(version=VERSION)
+        click.echo(json.dumps(comp_def, indent=2, ensure_ascii=False))
+        sys.exit(0)
+
+    # OSCAL Catalog Export
+    if export_oscal_path:
+        from .models import Policy
+        from .storage.oscal_loader import export_to_oscal
+        matcher = init_engine(rebuild=reindex, policies_path=policies_path)
+        policies = [
+            Policy(
+                policy_id=p.policy_id,
+                name=p.name,
+                framework=p.framework,
+                description=p.description,
+                trigger_keywords=p.trigger_keywords,
+            )
+            for p in matcher.policies
+        ]
+        oscal_data = export_to_oscal(
+            policies,
+            title="Semantic Matcher Policy Catalog (NIST OSCAL 1.1.0)",
+        )
+        export_oscal_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(export_oscal_path, "w", encoding="utf-8") as f:
+            json.dump(oscal_data, f, indent=2, ensure_ascii=False)
+        msg = f"Exported {len(policies)} policies to NIST OSCAL 1.1.0 catalog at '{export_oscal_path}'."
+        if as_json:
+            click.echo(json.dumps({"status": "success", "file": str(export_oscal_path), "policy_count": len(policies)}))
+        elif not quiet:
+            if console:
+                console.print(f"[green]✔ {msg}[/green]")
+            else:
+                click.echo(msg)
+        sys.exit(0)
 
     # Reindex only
     if reindex and not prompt_arg and not prompt_opt and not input_file and not interactive:

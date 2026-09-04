@@ -82,6 +82,21 @@ if result.is_blocked:
     print(f"Blocked by {result.violated_policy.policy_id}: {result.top_match.match_percentage:.1f}%")
 ```
 
+## NIST OSCAL Compliance
+
+The project supports NIST OSCAL 1.1.0 Catalogs and Component Definitions out of the box.
+
+```bash
+# Evaluate against an official NIST / FedRAMP OSCAL JSON catalog
+semantic-matcher -P data/oscal_catalog.json -p "bypass authentication"
+
+# Export active policies to a NIST OSCAL 1.1.0 catalog
+semantic-matcher --export-oscal exported_oscal.json
+
+# Output OSCAL Component Definition for enterprise System Security Plans (SSPs)
+semantic-matcher --oscal-component
+```
+
 ## Tests
 
 ```bash

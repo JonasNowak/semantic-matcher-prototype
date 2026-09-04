@@ -56,7 +56,10 @@ class PolicyIndexer:
                 for jf in json_files:
                     with open(jf, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        if isinstance(data, list):
+                        from .oscal_loader import is_oscal_catalog, load_oscal_catalog
+                        if is_oscal_catalog(data):
+                            policies.extend(load_oscal_catalog(data))
+                        elif isinstance(data, list):
                             policies.extend([Policy(**item) for item in data])
                         elif isinstance(data, dict):
                             policies.append(Policy(**data))
@@ -72,7 +75,10 @@ class PolicyIndexer:
 
         with open(self.policies_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        if isinstance(data, list):
+        from .oscal_loader import is_oscal_catalog, load_oscal_catalog
+        if is_oscal_catalog(data):
+            return load_oscal_catalog(data)
+        elif isinstance(data, list):
             return [Policy(**item) for item in data]
         elif isinstance(data, dict):
             return [Policy(**data)]

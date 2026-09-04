@@ -421,6 +421,7 @@
         <li><a href="#mod-field-mapper">semantics.field_mapper</a></li>
         <li><a href="#mod-indexer">storage.indexer</a></li>
         <li><a href="#mod-markdown-loader">storage.markdown_loader</a></li>
+        <li><a href="#mod-oscal-loader">storage.oscal_loader (OSCAL 1.1.0)</a></li>
         <li><a href="#mod-matcher">engine.matcher</a></li>
         <li><a href="#mod-models">models</a></li>
         <li><a href="#mod-guard">guard (v0.2.0)</a></li>
@@ -440,7 +441,16 @@
     </div>
 
     <div class="sidebar-group">
-      <div class="sidebar-group-title">5. Interactive Console</div>
+      <div class="sidebar-group-title">5. NIST OSCAL Compliance</div>
+      <ul class="sidebar-links">
+        <li><a href="#oscal-overview">OSCAL Architecture & Standards</a></li>
+        <li><a href="#oscal-catalog">Catalog Ingestion & Export</a></li>
+        <li><a href="#oscal-component">Component Definition (SSPs)</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">6. Interactive Console</div>
       <ul class="sidebar-links">
         <li><a href="#sandbox">Live Algorithm Console</a></li>
       </ul>
@@ -773,6 +783,19 @@ User Prompt
         </ul>
       </article>
 
+      <article id="mod-oscal-loader">
+        <h3><code>src/semantic_matcher/storage/oscal_loader.py</code> (OSCAL 1.1.0)</h3>
+        <p>
+          Implements bidirectional interoperability with NIST OSCAL (Open Security Controls Assessment Language) v1.0.0 and v1.1.0 JSON standards.
+        </p>
+        <ul>
+          <li><code>is_oscal_catalog(data_or_path) -&gt; bool</code>: Fast structural discriminator verifying whether a JSON file or parsed dictionary is an OSCAL Catalog.</li>
+          <li><code>load_oscal_catalog(data_or_path, default_framework) -&gt; List[Policy]</code>: Recursively parses OSCAL catalogs across arbitrary control hierarchies and groups, mapping control statements, guidance, tags, and parameters to <code>Policy</code> definitions.</li>
+          <li><code>export_to_oscal(policies, title, version) -&gt; Dict[str, Any]</code>: Serializes any collection of active policies into an official NIST OSCAL 1.1.0 Catalog format with UUID generation and property annotations.</li>
+          <li><code>get_oscal_component_definition(version) -&gt; Dict[str, Any]</code>: Emits the official NIST OSCAL Component Definition JSON for <code>semantic-matcher</code>, formally declaring implemented security controls (NIST SP 800-53 SI-4, AC-3, SC-7 and OWASP LLM01-LLM06) for enterprise System Security Plans (SSPs).</li>
+        </ul>
+      </article>
+
       <article id="mod-matcher">
         <h3><code>src/semantic_matcher/engine/matcher.py</code></h3>
         <p>
@@ -881,8 +904,109 @@ guard.validate(user_input)  # Raises PolicyViolationError on violation
 
 # 3. Method Decorator
 @semantic_matcher(threshold=70.0, action="raise")
-def execute_llm_call(prompt: str) -&gt; str:
+def execute_llm_call(prompt: str) -> str:
     return model.generate(prompt)</code></pre>
+    </section>
+
+    <!-- NIST OSCAL 1.1.0 Compliance Section -->
+    <section id="oscal-compliance">
+      <h2 id="oscal-overview">NIST OSCAL 1.1.0 Compliance &amp; Interoperability</h2>
+      <p>
+        The <strong>Open Security Controls Assessment Language (OSCAL)</strong>, developed by the National Institute of Standards and Technology (NIST), provides standardized, machine-readable JSON, YAML, and XML representations for security frameworks, baselines, and system security plans.
+      </p>
+      <p>
+        <code>semantic-matcher</code> achieves native, full-lifecycle OSCAL compliance across two primary OSCAL layers:
+      </p>
+
+      <div class="wiki-meta">
+        <div class="wiki-meta-item"><strong>OSCAL Standard:</strong> NIST OSCAL 1.1.0</div>
+        <div class="wiki-meta-item"><strong>Supported Models:</strong> Catalog Model &amp; Component Definition Model</div>
+        <div class="wiki-meta-item"><strong>GRC Compatibility:</strong> NIST SP 800-53, FedRAMP, CIS Controls v8, NIST AI RMF</div>
+      </div>
+
+      <h3 id="oscal-catalog">1. Catalog Ingestion &amp; Export</h3>
+      <p>
+        Any NIST OSCAL 1.0.0 or 1.1.0 Catalog (such as official NIST SP 800-53 Rev. 5 or FedRAMP baselines) can be ingested directly without translation or preprocessing. The recursive parser extracts control titles, statement prose, guidance, and metadata tags into the internal <code>Policy</code> model:
+      </p>
+
+      <table class="wiki-table">
+        <thead>
+          <tr>
+            <th>semantic-matcher Model</th>
+            <th>NIST OSCAL 1.1.0 JSON Path</th>
+            <th>Extraction Semantic</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>policy_id</code></td>
+            <td><code>control.props[name="label"]</code> or <code>control.id</code></td>
+            <td>Human-readable control tag (e.g. <code>AC-2</code>, <code>SI-4</code>).</td>
+          </tr>
+          <tr>
+            <td><code>name</code></td>
+            <td><code>control.title</code></td>
+            <td>Control or policy title.</td>
+          </tr>
+          <tr>
+            <td><code>framework</code></td>
+            <td><code>catalog.metadata.title</code> or <code>control.props[name="framework"]</code></td>
+            <td>Compliance standard name.</td>
+          </tr>
+          <tr>
+            <td><code>description</code></td>
+            <td><code>control.parts[name="statement"|"guidance"].prose</code></td>
+            <td>Normative requirements and prohibitive scope.</td>
+          </tr>
+          <tr>
+            <td><code>primary_fields</code></td>
+            <td><code>control.props[name="primary-field"|"category"]</code></td>
+            <td>Mapped to 12 West-Germanic Wortfelder.</td>
+          </tr>
+          <tr>
+            <td><code>trigger_keywords</code></td>
+            <td><code>control.props[name="trigger-keyword"].value + remarks</code></td>
+            <td>High-weight trigger tokens and saturation multipliers.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h4>CLI Usage with OSCAL Catalogs:</h4>
+      <pre><code># Evaluate prompts directly against an official OSCAL JSON catalog
+semantic-matcher -P data/oscal_catalog.json -p "attempting to exfiltrate database passwords"
+
+# Export existing policies to standard NIST OSCAL 1.1.0 format
+semantic-matcher --export-oscal my_oscal_catalog.json
+
+# Export custom Markdown policies to NIST OSCAL 1.1.0
+semantic-matcher -P examples/markdown_policies --export-oscal exported_oscal.json</code></pre>
+
+      <h3 id="oscal-component">2. OSCAL Component Definition (SSPs &amp; FedRAMP)</h3>
+      <p>
+        In enterprise security engineering and FedRAMP authorization, automated tools must define how they implement control baselines inside a <strong>System Security Plan (SSP)</strong>.
+      </p>
+      <p>
+        <code>semantic-matcher</code> ships with an official NIST OSCAL 1.1.0 Component Definition (<code>data/oscal_component_definition.json</code>) defining it as a software security guardrail component:
+      </p>
+
+      <pre><code># Output the official NIST OSCAL 1.1.0 Component Definition
+semantic-matcher --oscal-component
+
+# Retrieve programmatically in Python
+from semantic_matcher import get_oscal_component_definition
+
+comp_def = get_oscal_component_definition()
+print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
+
+      <p>
+        Implemented control mapping declared in the component definition:
+      </p>
+      <ul>
+        <li><strong>NIST SP 800-53 SI-4 (Information System Monitoring):</strong> Continuous lexical and morphological inspection of natural language prompts.</li>
+        <li><strong>NIST SP 800-53 SC-7 (Boundary Protection):</strong> Guardrail boundary defense preventing credential exfiltration, token dumping, and PII leaks.</li>
+        <li><strong>NIST SP 800-53 AC-3 (Access Enforcement):</strong> Prevention of prompt actions bypassing authorization boundaries or elevating privileges.</li>
+        <li><strong>OWASP Top 10 for LLMs (LLM01, LLM02, LLM06):</strong> Algorithmic mitigation for Prompt Injection, Sensitive Information Disclosure, and Excessive Agency.</li>
+      </ul>
     </section>
 
     <!-- Interactive Wiki Sandbox -->

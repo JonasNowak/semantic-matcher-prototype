@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from .cli import get_default_data_paths, init_engine
 from .decorator import PolicyViolationError
 from .engine.matcher import SemanticMatcher
-from .models import MatchResult
+from .models import MatchResult, Policy
 
 
 class PolicyGuard:
@@ -93,6 +93,42 @@ class PolicyGuard:
                 all_matches=results,
             )
         return top
+
+    def export_oscal(
+        self,
+        output_path: Optional[Union[str, Path]] = None,
+        title: str = "Semantic Matcher Policy Catalog",
+    ) -> Dict[str, Any]:
+        """
+        Export currently loaded active policies to NIST OSCAL 1.1.0 Catalog format.
+        If output_path is provided, writes formatted JSON to that file.
+        """
+        import json
+        from .storage.oscal_loader import export_to_oscal
+        policies = [
+            Policy(
+                policy_id=p.policy_id,
+                name=p.name,
+                framework=p.framework,
+                description=p.description,
+                trigger_keywords=p.trigger_keywords,
+            )
+            for p in self.matcher.policies
+        ]
+        oscal_data = export_to_oscal(policies, title=title)
+        if output_path:
+            out_p = Path(output_path)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            with open(out_p, "w", encoding="utf-8") as f:
+                json.dump(oscal_data, f, indent=2, ensure_ascii=False)
+        return oscal_data
+
+    @staticmethod
+    def get_component_definition(version: str = "0.2.0") -> Dict[str, Any]:
+        """Return the official NIST OSCAL 1.1.0 Component Definition for semantic-matcher."""
+        from .storage.oscal_loader import get_oscal_component_definition
+        return get_oscal_component_definition(version=version)
+
 
 
 def check_prompt(

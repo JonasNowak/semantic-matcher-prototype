@@ -11,6 +11,8 @@ wheels/
 
 # Specifications & local documentation
 SPEC.md
+GEMINI.md
+AGENTS.md
 
 # Dynamic policy cache files
 .policy_index.json

@@ -17,6 +17,7 @@ class LexicalFieldMapper:
     def __init__(self, fields_data: Optional[Dict[str, List[str]]] = None, fields_path: Optional[Path] = None):
         self.fields: Dict[str, Set[str]] = {}
         self.stemmed_fields: Dict[str, Set[str]] = {}
+        self.compound_fragments: Dict[str, List[str]] = {}
 
         if fields_data:
             self._load_from_dict(fields_data)
@@ -31,6 +32,7 @@ class LexicalFieldMapper:
             self.fields[field_name] = words_set
             # Also store stemmed forms for robust matching
             self.stemmed_fields[field_name] = {stem_word(w) for w in words_set}
+            self.compound_fragments[field_name] = [w for w in words_set if len(w) >= 4]
 
     @property
     def field_names(self) -> List[str]:
@@ -48,6 +50,7 @@ class LexicalFieldMapper:
         stemmed_input = [stem_word(t) for t in tokens]
 
         for token, stemmed in zip(tokens, stemmed_input):
+            token_len = len(token)
             for fname in self.field_names:
                 # Direct word match (weight 1.0)
                 if token in self.fields[fname]:
@@ -56,7 +59,7 @@ class LexicalFieldMapper:
                 elif stemmed in self.stemmed_fields[fname]:
                     activations[fname] += 0.8
                 # Substring match for compound fragments (weight 0.5)
-                elif any(len(fw) >= 4 and fw in token for fw in self.fields[fname]):
+                elif token_len >= 4 and any(fw in token for fw in self.compound_fragments[fname]):
                     activations[fname] += 0.5
 
         # Normalize activations (L2 norm)

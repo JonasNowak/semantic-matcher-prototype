@@ -9,7 +9,7 @@ import json
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from ..models import Policy
 
@@ -181,31 +181,40 @@ def load_oscal_catalog(
 
 
 def export_to_oscal(
-    policies: List[Policy],
+    policies: Sequence[Any],
     title: str = "Semantic Matcher Policy Catalog",
     catalog_version: str = "1.0.0",
     catalog_uuid: Optional[str] = None,
+    output_path: Optional[Union[str, Path]] = None,
 ) -> Dict[str, Any]:
     """
-    Export a list of Policy objects to a standard NIST OSCAL 1.1.0 Catalog JSON format.
+    Export a sequence of Policy or PredecomposedPolicy objects to NIST OSCAL 1.1.0 Catalog format.
+    If output_path is provided, writes the formatted JSON to that file.
     """
     now_iso = datetime.now(timezone.utc).isoformat()
     cid = catalog_uuid or str(uuid.uuid4())
 
     controls_list = []
     for pol in policies:
-        ctrl_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{cid}:{pol.policy_id}"))
-        ctrl_id = pol.policy_id.lower().replace(" ", "-").replace("_", "-")
+        policy_id = getattr(pol, "policy_id", "")
+        name = getattr(pol, "name", policy_id)
+        framework = getattr(pol, "framework", "")
+        description = getattr(pol, "description", "")
+        primary_fields = getattr(pol, "primary_fields", [])
+        trigger_keywords = getattr(pol, "trigger_keywords", {})
+
+        ctrl_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, f"{cid}:{policy_id}"))
+        ctrl_id = policy_id.lower().replace(" ", "-").replace("_", "-")
 
         props = [
-            {"name": "label", "value": pol.policy_id},
-            {"name": "framework", "value": pol.framework},
+            {"name": "label", "value": policy_id},
+            {"name": "framework", "value": framework},
         ]
 
-        for field_name in pol.primary_fields:
+        for field_name in primary_fields:
             props.append({"name": "primary-field", "value": field_name})
 
-        for kw, weight in pol.trigger_keywords.items():
+        for kw, weight in trigger_keywords.items():
             props.append({
                 "name": "trigger-keyword",
                 "value": kw,
@@ -216,7 +225,7 @@ def export_to_oscal(
             {
                 "id": f"{ctrl_id}-statement",
                 "name": "statement",
-                "prose": pol.description,
+                "prose": description,
             }
         ]
 
@@ -224,12 +233,12 @@ def export_to_oscal(
             "id": ctrl_id,
             "uuid": ctrl_uuid,
             "class": "guardrail-policy",
-            "title": pol.name,
+            "title": name,
             "props": props,
             "parts": parts,
         })
 
-    return {
+    data = {
         "$schema": OSCAL_SCHEMA_CATALOG,
         "catalog": {
             "uuid": cid,
@@ -244,6 +253,15 @@ def export_to_oscal(
             "controls": controls_list,
         },
     }
+
+    if output_path:
+        out_p = Path(output_path)
+        out_p.parent.mkdir(parents=True, exist_ok=True)
+        with open(out_p, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+
+    return data
+
 
 
 def get_oscal_component_definition(version: str = "0.2.0") -> Dict[str, Any]:

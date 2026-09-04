@@ -51,9 +51,11 @@ class Decompounder:
         if vocabulary:
             self.vocabulary.update(vocabulary)
         self.min_part_len = min_part_len
+        self._cache: dict[str, List[str]] = {}
 
     def add_words(self, words: List[str]) -> None:
         """Register additional domain words into the morpheme lexicon."""
+        self._cache.clear()
         for w in words:
             w_clean = w.strip().lower()
             if len(w_clean) >= self.min_part_len:
@@ -68,28 +70,29 @@ class Decompounder:
         # Try prefix matching
         for i in range(self.min_part_len, len(word) - self.min_part_len + 1):
             prefix = word[:i]
+            if prefix not in self.vocabulary:
+                continue
+
             remainder = word[i:]
 
-            if prefix in self.vocabulary:
-                # 1. Remainder is directly in vocabulary
-                if remainder in self.vocabulary:
-                    return [prefix, remainder]
+            # 1. Direct remainder match
+            if remainder in self.vocabulary:
+                return [prefix, remainder]
 
-                # 2. Remainder can be further split
-                deeper = self._split_single(remainder)
-                if deeper:
-                    return [prefix] + deeper
+            # 2. Recursive remainder split
+            deeper = self._split_single(remainder)
+            if deeper:
+                return [prefix] + deeper
 
-            # Check with interfixes
+            # 3. Interfix check (Fugenlaute)
             for fuge in FUGEN:
                 if remainder.startswith(fuge) and len(remainder) > len(fuge) + self.min_part_len:
                     fuge_rest = remainder[len(fuge):]
-                    if prefix in self.vocabulary:
-                        if fuge_rest in self.vocabulary:
-                            return [prefix, fuge_rest]
-                        deeper = self._split_single(fuge_rest)
-                        if deeper:
-                            return [prefix] + deeper
+                    if fuge_rest in self.vocabulary:
+                        return [prefix, fuge_rest]
+                    deeper_fuge = self._split_single(fuge_rest)
+                    if deeper_fuge:
+                        return [prefix] + deeper_fuge
 
         return None
 
@@ -99,6 +102,9 @@ class Decompounder:
         Returns a list of parts, or [word] if no decomposition is found.
         """
         word = word.lower().strip()
+        if word in self._cache:
+            return self._cache[word]
+
         parts = self._split_single(word)
         if parts:
             # Flatten recursively if any part is still compoundable
@@ -109,9 +115,12 @@ class Decompounder:
                     flattened.extend(sub)
                 else:
                     flattened.append(p)
+            self._cache[word] = flattened
             return flattened
 
-        return [word]
+        result = [word]
+        self._cache[word] = result
+        return result
 
     def decompose_tokens(self, tokens: List[str]) -> List[str]:
         """Decomposes a list of tokens, expanding any detected compounds."""

@@ -78,8 +78,8 @@ from semantic_matcher import PolicyGuard
 guard = PolicyGuard(policies="path/to/policies.json", threshold=60.0)
 result = guard.check("extract customer passwords")
 
-if result.is_blocked:
-    print(f"Blocked by {result.violated_policy.policy_id}: {result.top_match.match_percentage:.1f}%")
+if result:
+    print(f"Blocked by {result.policy_id}: {result.match_percentage:.1f}%")
 ```
 
 ## NIST OSCAL Compliance

@@ -31,23 +31,49 @@ def _clean_text(text: str) -> str:
     return " ".join(text.split()).strip()
 
 
+def _parse_scalar(val_str: str) -> Union[float, int, str]:
+    """Parse a scalar string into an int, float, or stripped string."""
+    clean = val_str.strip().strip("\"'")
+    try:
+        return float(clean) if "." in clean else int(clean)
+    except ValueError:
+        return clean
+
+
+def _parse_yaml_value(val_str: str) -> Any:
+    """Parse inline YAML list, inline dict, or scalar."""
+    clean = val_str.strip()
+    if clean.startswith("[") and clean.endswith("]"):
+        return [_clean_text(x) for x in clean[1:-1].split(",") if x.strip()]
+    if clean.startswith("{") and clean.endswith("}"):
+        d: Dict[str, float] = {}
+        for pair in clean[1:-1].split(","):
+            if ":" in pair:
+                k, v = pair.split(":", 1)
+                try:
+                    d[k.strip().strip("\"'")] = float(v.strip())
+                except ValueError:
+                    pass
+        return d
+    return _parse_scalar(clean)
+
+
 def parse_simple_yaml(yaml_str: str) -> Dict[str, Any]:
     """
     Lightweight, pure-Python parser for YAML frontmatter.
     Handles scalars, numbers, inline lists, bullet lists, and nested key-value dicts.
     """
     result: Dict[str, Any] = {}
-    lines = yaml_str.splitlines()
     current_key: Optional[str] = None
     current_list: Optional[List[Any]] = None
     current_dict: Optional[Dict[str, Any]] = None
 
-    for line in lines:
+    for line in yaml_str.splitlines():
         stripped = line.strip()
         if not stripped or stripped.startswith("#"):
             continue
 
-        # Check for list item under current_key
+        # Bullet list item under current_key
         if line.startswith("  - ") or line.startswith(" - ") or stripped.startswith("- "):
             item_val = stripped[2:].strip().strip("\"'")
             if current_list is not None:
@@ -57,20 +83,11 @@ def parse_simple_yaml(yaml_str: str) -> Dict[str, Any]:
                 result[current_key] = current_list
             continue
 
-        # Check for nested dict item: "  word: 3.0"
+        # Nested dict item: "  word: 3.0"
         nested_match = re.match(r"^[\s\t]+([A-Za-z0-9_\-\.\s]+):\s*(.*)$", line)
         if nested_match and current_key:
             subkey = nested_match.group(1).strip()
-            subval_raw = nested_match.group(2).strip().strip("\"'")
-            val: Union[float, int, str] = subval_raw
-            try:
-                if "." in subval_raw:
-                    val = float(subval_raw)
-                else:
-                    val = int(subval_raw)
-            except ValueError:
-                pass
-
+            val = _parse_scalar(nested_match.group(2))
             if current_dict is not None:
                 current_dict[subkey] = val
             else:
@@ -83,39 +100,11 @@ def parse_simple_yaml(yaml_str: str) -> Dict[str, Any]:
         if top_match:
             current_list = None
             current_dict = None
-
             key = top_match.group(1).strip().lower()
             val_raw = top_match.group(2).strip()
             current_key = key
-
-            if not val_raw:
-                continue
-
-            # Inline list: [a, b, c]
-            if val_raw.startswith("[") and val_raw.endswith("]"):
-                items = [x.strip().strip("\"'") for x in val_raw[1:-1].split(",") if x.strip()]
-                result[key] = items
-            # Inline dict: {a: 1.0, b: 2.0}
-            elif val_raw.startswith("{") and val_raw.endswith("}"):
-                d: Dict[str, float] = {}
-                pairs = [x.strip() for x in val_raw[1:-1].split(",") if x.strip()]
-                for pair in pairs:
-                    if ":" in pair:
-                        k, v = pair.split(":", 1)
-                        try:
-                            d[k.strip().strip("\"'")] = float(v.strip())
-                        except ValueError:
-                            pass
-                result[key] = d
-            else:
-                clean_val = val_raw.strip("\"'")
-                try:
-                    if "." in clean_val:
-                        result[key] = float(clean_val)
-                    else:
-                        result[key] = int(clean_val)
-                except ValueError:
-                    result[key] = clean_val
+            if val_raw:
+                result[key] = _parse_yaml_value(val_raw)
 
     return result
 
@@ -124,57 +113,52 @@ def extract_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
     """Extract YAML frontmatter between initial `---` fences if present."""
     match = re.match(r"^---\s*\r?\n(.*?)\r?\n---\s*\r?\n(.*)$", content, re.DOTALL)
     if match:
-        yaml_content = match.group(1)
-        body = match.group(2)
-        parsed = parse_simple_yaml(yaml_content)
-        return parsed, body
+        return parse_simple_yaml(match.group(1)), match.group(2)
     return {}, content
 
 
+META_KEY_MAP = {
+    "framework": "framework", "baseline": "framework", "standard": "framework", "regulation": "framework",
+    "policy_id": "policy_id", "id": "policy_id", "code": "policy_id",
+    "primary_fields": "primary_fields", "fields": "primary_fields", "categories": "primary_fields",
+    "trigger_keywords": "trigger_keywords", "keywords": "trigger_keywords", "triggers": "trigger_keywords",
+    "name": "name", "title": "name", "policy_name": "name",
+}
+
+
 def parse_inline_metadata(text: str) -> Tuple[Dict[str, Any], str]:
-    """
-    Extract inline metadata patterns like:
-    **Framework**: GDPR
-    **Policy ID**: POL-01
-    **Fields**: PRIVACY, CREDENTIALS
-    **Keywords**: ssn: 3.0, passport: 2.5
-    """
+    """Extract inline metadata patterns (e.g. **Framework**: GDPR, **Policy ID**: POL-01)."""
     meta: Dict[str, Any] = {}
     clean_lines: List[str] = []
 
     for line in text.splitlines():
-        line_stripped = line.strip()
-        m = re.match(r"^(?:\*\*)?([A-Za-z\s_-]+)(?:\*\*)?:\s*(.*)$", line_stripped)
+        m = re.match(r"^(?:\*\*)?([A-Za-z\s_-]+)(?:\*\*)?:\s*(.*)$", line.strip())
         if m:
             raw_key = m.group(1).strip().lower().replace(" ", "_").replace("-", "_")
             raw_val = m.group(2).strip()
+            target_key = META_KEY_MAP.get(raw_key)
 
-            if raw_key in ["framework", "baseline", "standard", "regulation"]:
-                meta["framework"] = _clean_text(raw_val)
+            if target_key in ("framework", "policy_id", "name"):
+                meta[target_key] = _clean_text(raw_val)
                 continue
-            elif raw_key in ["policy_id", "id", "code"]:
-                meta["policy_id"] = _clean_text(raw_val)
+            elif target_key == "primary_fields":
+                meta["primary_fields"] = [_clean_text(f).upper() for f in raw_val.split(",") if f.strip()]
                 continue
-            elif raw_key in ["primary_fields", "fields", "categories"]:
-                fields = [_clean_text(f).upper() for f in raw_val.split(",") if f.strip()]
-                meta["primary_fields"] = fields
-                continue
-            elif raw_key in ["trigger_keywords", "keywords", "triggers"]:
+            elif target_key == "trigger_keywords":
                 triggers: Dict[str, float] = {}
-                parts = [p.strip() for p in raw_val.split(",") if p.strip()]
-                for p in parts:
-                    if ":" in p:
-                        kw, w_str = p.split(":", 1)
+                for p in raw_val.split(","):
+                    p_clean = p.strip()
+                    if not p_clean:
+                        continue
+                    if ":" in p_clean:
+                        kw, w_str = p_clean.split(":", 1)
                         try:
                             triggers[_clean_text(kw).lower()] = float(w_str.strip())
                         except ValueError:
                             triggers[_clean_text(kw).lower()] = 2.0
                     else:
-                        triggers[_clean_text(p).lower()] = 2.0
+                        triggers[_clean_text(p_clean).lower()] = 2.0
                 meta["trigger_keywords"] = triggers
-                continue
-            elif raw_key in ["name", "title", "policy_name"]:
-                meta["name"] = _clean_text(raw_val)
                 continue
 
         clean_lines.append(line)

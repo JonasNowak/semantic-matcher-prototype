@@ -797,11 +797,13 @@ User Prompt
       </article>
 
       <article id="mod-matcher">
-        <h3><code>src/semantic_matcher/engine/matcher.py</code></h3>
+        <h3><code>src/semantic_matcher/engine/matcher.py</code> &amp; <code>factory.py</code></h3>
         <p>
-          The core orchestrator.
+          The core matching engine and initialization factory.
         </p>
         <ul>
+          <li><code>init_engine(rebuild=False, policies_path=None, ...) -&gt; SemanticMatcher</code>: Decoupled factory that discovers default bundled data and manages cached engine instances.</li>
+          <li><code>get_default_data_paths() -&gt; Dict[str, Path]</code>: Resolves package-bundled and repository data paths.</li>
           <li><code>SemanticMatcher.__init__(policies, field_mapper, decompounder, w_morph=0.35, w_field=0.40, w_trigger=0.25)</code>: Configures weights and pre-loaded policies.</li>
           <li><code>decompose_prompt(prompt: str) -&gt; DecomposedText</code>: Breaks input prompt into tokens, morphemes, lemmas, and field activation vector.</li>
           <li><code>match(prompt: str, threshold: float = 0.0) -&gt; List[MatchResult]</code>: Evaluates input against all policies, computes Tversky, Cosine, Damping, Triggers, and Confidence Amplification, returning results sorted descending by match percentage.</li>

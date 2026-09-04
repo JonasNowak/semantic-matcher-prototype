@@ -3,6 +3,7 @@ Algorithmic Stemmer & Morphological Reducer for West-Germanic languages.
 Applies rule-based suffix reduction for English and German.
 """
 
+import functools
 from typing import List
 
 # Common stem / irregular overrides
@@ -61,6 +62,7 @@ ENGLISH_SUFFIXES = [
 ]
 
 
+@functools.lru_cache(maxsize=8192)
 def stem_word(word: str) -> str:
     """Stem a single word using rule-based suffix reduction."""
     word = word.lower().strip()

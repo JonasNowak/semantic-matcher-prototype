@@ -22,6 +22,7 @@ try:
 except ImportError:
     HAS_RICH = False
 
+from .engine.factory import get_default_data_paths, init_engine
 from .engine.matcher import SemanticMatcher
 from .formatter import (
     format_table,
@@ -32,53 +33,8 @@ from .formatter import (
     print_summary_card,
 )
 from .models import MatchResult
-from .storage.indexer import PolicyIndexer
 
 VERSION = "0.2.0"
-
-
-def get_default_data_paths() -> Dict[str, Path]:
-    """Locate default data directory bundled with package or in repo root."""
-    # 1. First check package-bundled data directory (works when installed via pip/wheel)
-    pkg_data_dir = Path(__file__).resolve().parent / "data"
-    if (pkg_data_dir / "policies.json").exists():
-        data_dir = pkg_data_dir
-    else:
-        # 2. Fallback to repository root for local unpackaged development
-        repo_data_dir = Path(__file__).resolve().parent.parent.parent / "data"
-        data_dir = repo_data_dir if repo_data_dir.exists() else pkg_data_dir
-
-    return {
-        "policies": data_dir / "policies.json",
-        "fields": data_dir / "lexical_fields.json",
-        "index": data_dir / "policy_index.json",
-    }
-
-
-def init_engine(
-    rebuild: bool = False,
-    policies_path: Optional[Path] = None,
-    fields_path: Optional[Path] = None,
-    index_path: Optional[Path] = None,
-) -> SemanticMatcher:
-    """Initialize and return the SemanticMatcher instance."""
-    defaults = get_default_data_paths()
-    p_path = Path(policies_path) if policies_path else defaults["policies"]
-    f_path = Path(fields_path) if fields_path else defaults["fields"]
-    i_path = Path(index_path) if index_path else (defaults["index"] if policies_path is None else None)
-
-    indexer = PolicyIndexer(
-        policies_path=p_path,
-        fields_path=f_path,
-        index_path=i_path,
-    )
-    policies = indexer.get_or_load_index(force_rebuild=rebuild)
-
-    return SemanticMatcher(
-        policies=policies,
-        field_mapper=indexer.field_mapper,
-        decompounder=indexer.decompounder,
-    )
 
 
 def filter_results_by_framework(results: List[MatchResult], framework_filter: Optional[str]) -> List[MatchResult]:
@@ -224,24 +180,14 @@ def run_interactive_mode(
         if cleaned.lower().startswith(":oscal") or cleaned.lower().startswith("/oscal"):
             parts = cleaned.split(maxsplit=1)
             target = parts[1].strip().strip('"\'') if len(parts) > 1 else "oscal_catalog.json"
-            from .models import Policy
             from .storage.oscal_loader import export_to_oscal
-            policies = [
-                Policy(
-                    policy_id=p.policy_id,
-                    name=p.name,
-                    framework=p.framework,
-                    description=p.description,
-                    trigger_keywords=p.trigger_keywords,
-                )
-                for p in matcher.policies
-            ]
-            oscal_data = export_to_oscal(policies, title="Semantic Matcher Policy Catalog (NIST OSCAL 1.1.0)")
             target_path = Path(target)
-            target_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(target_path, "w", encoding="utf-8") as f:
-                json.dump(oscal_data, f, indent=2, ensure_ascii=False)
-            console.print(f"[green]✔ Exported {len(policies)} policies to NIST OSCAL 1.1.0 catalog: '{target_path}'[/green]\n")
+            export_to_oscal(
+                matcher.policies,
+                title="Semantic Matcher Policy Catalog (NIST OSCAL 1.1.0)",
+                output_path=target_path,
+            )
+            console.print(f"[green]✔ Exported {len(matcher.policies)} policies to NIST OSCAL 1.1.0 catalog: '{target_path}'[/green]\n")
             continue
 
         if (
@@ -442,35 +388,24 @@ def cli(
 
     # OSCAL Catalog Export
     if export_oscal_path:
-        from .models import Policy
         from .storage.oscal_loader import export_to_oscal
         matcher = init_engine(rebuild=reindex, policies_path=policies_path)
-        policies = [
-            Policy(
-                policy_id=p.policy_id,
-                name=p.name,
-                framework=p.framework,
-                description=p.description,
-                trigger_keywords=p.trigger_keywords,
-            )
-            for p in matcher.policies
-        ]
-        oscal_data = export_to_oscal(
-            policies,
+        export_to_oscal(
+            matcher.policies,
             title="Semantic Matcher Policy Catalog (NIST OSCAL 1.1.0)",
+            output_path=export_oscal_path,
         )
-        export_oscal_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(export_oscal_path, "w", encoding="utf-8") as f:
-            json.dump(oscal_data, f, indent=2, ensure_ascii=False)
-        msg = f"Exported {len(policies)} policies to NIST OSCAL 1.1.0 catalog at '{export_oscal_path}'."
+        count = len(matcher.policies)
+        msg = f"Exported {count} policies to NIST OSCAL 1.1.0 catalog at '{export_oscal_path}'."
         if as_json:
-            click.echo(json.dumps({"status": "success", "file": str(export_oscal_path), "policy_count": len(policies)}))
+            click.echo(json.dumps({"status": "success", "file": str(export_oscal_path), "policy_count": count}))
         elif not quiet:
             if console:
                 console.print(f"[green]✔ {msg}[/green]")
             else:
                 click.echo(msg)
         sys.exit(0)
+
 
     # Reindex only
     if reindex and not prompt_arg and not prompt_opt and not input_file and not interactive:

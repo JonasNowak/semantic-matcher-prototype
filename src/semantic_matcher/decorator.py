@@ -11,7 +11,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
-from .cli import init_engine
+from .engine.factory import init_engine
 from .engine.matcher import SemanticMatcher
 from .models import MatchResult
 

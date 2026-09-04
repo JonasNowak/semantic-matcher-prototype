@@ -5,8 +5,8 @@ Algorithmic semantic & morphological policy matcher for natural language prompts
 
 __version__ = "0.2.0"
 
-from .cli import get_default_data_paths, init_engine
 from .decorator import PolicyViolationError, semantic_matcher
+from .engine.factory import get_default_data_paths, init_engine
 from .engine.matcher import SemanticMatcher
 from .guard import PolicyGuard, check_prompt, evaluate_prompt
 from .models import MatchResult, Policy, PredecomposedPolicy

@@ -45,13 +45,38 @@ class PolicyIndexer:
 
     def load_raw_policies(self) -> List[Policy]:
         """Load raw policies from JSON or Markdown (file or directory)."""
-        if self.policies_path.is_dir() or self.policies_path.suffix.lower() in [".md", ".markdown"]:
+        if self.policies_path.is_dir():
+            # Check for JSON files in directory (ignoring cached index files)
+            json_files = sorted([
+                f for f in self.policies_path.glob("*.json")
+                if not f.name.endswith("index.json") and not f.name.startswith(".")
+            ])
+            if json_files:
+                policies: List[Policy] = []
+                for jf in json_files:
+                    with open(jf, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        if isinstance(data, list):
+                            policies.extend([Policy(**item) for item in data])
+                        elif isinstance(data, dict):
+                            policies.append(Policy(**data))
+                if policies:
+                    return policies
+
+            from .markdown_loader import load_policies_from_markdown
+            return load_policies_from_markdown(self.policies_path)
+
+        if self.policies_path.suffix.lower() in [".md", ".markdown"]:
             from .markdown_loader import load_policies_from_markdown
             return load_policies_from_markdown(self.policies_path)
 
         with open(self.policies_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        return [Policy(**item) for item in data]
+        if isinstance(data, list):
+            return [Policy(**item) for item in data]
+        elif isinstance(data, dict):
+            return [Policy(**data)]
+        return []
 
     def decompose_policy(self, policy: Policy) -> PredecomposedPolicy:
         """Decompose a single policy into morphemes and semantic activations."""

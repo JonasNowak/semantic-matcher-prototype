@@ -17,3 +17,8 @@ AGENTS.md
 # Dynamic policy cache files
 .policy_index.json
 *.index.json
+
+# Local test environments & scratch
+test_env/
+large_kb_test/
+scratch/

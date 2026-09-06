@@ -4,27 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Semantic Matcher — Technical Documentation & Architecture Wiki</title>
-  <meta name="description" content="Technical specification, algorithmic decomposition deep dive, and module-by-module reference for Semantic Matcher.">
+  <meta name="description" content="In-depth technical specification, algorithmic decomposition deep dive, and module reference for Semantic Matcher.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        darkMode: true,
+        background: '#0e131f',
+        primaryColor: '#1e293b',
+        primaryTextColor: '#f1f5f9',
+        primaryBorderColor: '#38bdf8',
+        lineColor: '#64748b',
+        secondaryColor: '#172033',
+        tertiaryColor: '#0b0f17'
+      }
+    });
+  </script>
   <style>
     :root {
-      --bg-page: #0b0f17;
-      --bg-sidebar: #0e131d;
-      --bg-content: #111724;
-      --bg-subtle: #172033;
-      --bg-code: #070a10;
-      --border: #1f2a3f;
-      --border-highlight: #334460;
+      --bg-page: #080c14;
+      --bg-sidebar: #0d121e;
+      --bg-content: #111726;
+      --bg-card: #151d30;
+      --bg-subtle: #1a243b;
+      --bg-code: #060910;
+      --border: #1e2b45;
+      --border-highlight: #334466;
       --text-main: #e2e8f0;
-      --text-muted: #8b9bb4;
-      --text-faint: #56657f;
+      --text-muted: #94a3b8;
+      --text-faint: #64748b;
       --accent: #38bdf8;
+      --accent-hover: #7dd3fc;
       --accent-muted: #0284c7;
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f43f5e;
+      --purple: #c084fc;
       --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'Fira Code', 'SFMono-Regular', Consolas, Menlo, monospace;
-      --sidebar-width: 280px;
+      --sidebar-width: 290px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -50,7 +73,7 @@
       left: 0;
       overflow-y: auto;
       padding: 24px 16px;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       z-index: 50;
     }
 
@@ -59,9 +82,9 @@
 
     .sidebar-brand {
       display: block;
-      padding: 0 10px 20px;
+      padding: 0 10px 18px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       text-decoration: none;
       color: var(--text-main);
     }
@@ -69,7 +92,12 @@
       font-weight: 700;
       font-size: 1.05rem;
       letter-spacing: -0.01em;
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .sidebar-brand-title svg {
+      color: var(--accent);
     }
     .sidebar-brand-subtitle {
       font-family: var(--font-mono);
@@ -77,10 +105,27 @@
       color: var(--accent);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      margin-top: 2px;
+      display: block;
+    }
+
+    .sidebar-search {
+      width: 100%;
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-main);
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      outline: none;
+      margin-bottom: 18px;
+    }
+    .sidebar-search:focus {
+      border-color: var(--accent);
     }
 
     .sidebar-group {
-      margin-bottom: 22px;
+      margin-bottom: 20px;
     }
     .sidebar-group-title {
       font-size: 0.7rem;
@@ -100,7 +145,7 @@
       color: var(--text-muted);
       text-decoration: none;
       border-radius: 4px;
-      transition: all 0.1s;
+      transition: all 0.12s;
     }
     .sidebar-links a:hover {
       color: var(--text-main);
@@ -109,15 +154,15 @@
     .sidebar-links a.active {
       color: var(--accent);
       font-weight: 600;
-      background: rgba(56, 189, 248, 0.08);
+      background: rgba(56, 189, 248, 0.09);
     }
 
     /* Main Content */
     .wiki-main {
       margin-left: var(--sidebar-width);
       flex: 1;
-      padding: 48px 56px 96px;
-      max-width: 1040px;
+      padding: 48px 56px 120px;
+      max-width: 1080px;
     }
 
     /* Wiki Headers */
@@ -128,48 +173,108 @@
       letter-spacing: -0.02em;
     }
     h1 {
-      font-size: 2.3rem;
-      margin-bottom: 12px;
-      border-bottom: 1px solid var(--border);
+      font-size: 2.25rem;
+      margin-bottom: 14px;
       padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
     }
     h2 {
       font-size: 1.55rem;
-      margin: 48px 0 18px;
+      margin: 52px 0 20px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
     h3 {
-      font-size: 1.22rem;
-      margin: 32px 0 14px;
+      font-size: 1.2rem;
+      margin: 34px 0 14px;
+      color: #f1f5f9;
     }
     h4 {
       font-size: 1.02rem;
-      margin: 22px 0 10px;
+      margin: 24px 0 10px;
+      color: #cbd5e1;
     }
     p {
       margin-bottom: 16px;
       color: var(--text-main);
     }
 
-    /* Wiki Metadata Box */
+    /* Wiki Metadata Badge Row */
     .wiki-meta {
       display: flex;
-      gap: 20px;
-      padding: 12px 16px;
-      background: var(--bg-subtle);
+      gap: 14px;
+      padding: 12px 18px;
+      background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 0.8rem;
       color: var(--text-muted);
       margin-bottom: 32px;
       flex-wrap: wrap;
+      align-items: center;
     }
     .wiki-meta-item strong {
       color: var(--text-main);
     }
+    .wiki-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 500;
+    }
+    .wiki-badge.blue { background: rgba(56, 189, 248, 0.12); color: var(--accent); border: 1px solid rgba(56, 189, 248, 0.3); }
+    .wiki-badge.green { background: rgba(52, 211, 153, 0.12); color: var(--success); border: 1px solid rgba(52, 211, 153, 0.3); }
+    .wiki-badge.purple { background: rgba(192, 132, 252, 0.12); color: var(--purple); border: 1px solid rgba(192, 132, 252, 0.3); }
 
-    /* Callout Boxes */
+    /* Collapsible Source Files (DeepWiki Style) */
+    details.wiki-sources {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin: 20px 0 28px;
+      padding: 12px 16px;
+      font-size: 0.86rem;
+    }
+    details.wiki-sources summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--accent);
+      user-select: none;
+      outline: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    details.wiki-sources summary:hover {
+      color: var(--accent-hover);
+    }
+    details.wiki-sources ul {
+      margin-top: 12px;
+      padding-left: 20px;
+      margin-bottom: 4px;
+    }
+    details.wiki-sources li {
+      margin-bottom: 6px;
+      color: var(--text-muted);
+    }
+    details.wiki-sources a {
+      color: var(--accent);
+      text-decoration: none;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+    details.wiki-sources a:hover {
+      text-decoration: underline;
+    }
+
+    /* Callouts */
     .wiki-callout {
       border-left: 3px solid var(--accent);
       background: rgba(56, 189, 248, 0.05);
@@ -179,16 +284,16 @@
       font-size: 0.92rem;
     }
     .wiki-callout.linguistic {
-      border-left-color: #a855f7;
-      background: rgba(168, 85, 247, 0.05);
+      border-left-color: var(--purple);
+      background: rgba(192, 132, 252, 0.05);
     }
     .wiki-callout.math {
-      border-left-color: #10b981;
-      background: rgba(16, 185, 129, 0.05);
+      border-left-color: var(--success);
+      background: rgba(52, 211, 153, 0.05);
     }
-    .wiki-callout.perf {
-      border-left-color: #f59e0b;
-      background: rgba(245, 158, 11, 0.05);
+    .wiki-callout.warning {
+      border-left-color: var(--warning);
+      background: rgba(251, 191, 36, 0.05);
     }
     .wiki-callout-title {
       font-weight: 600;
@@ -197,9 +302,9 @@
       letter-spacing: 0.05em;
       margin-bottom: 6px;
     }
-    .wiki-callout.linguistic .wiki-callout-title { color: #c084fc; }
-    .wiki-callout.math .wiki-callout-title { color: #34d399; }
-    .wiki-callout.perf .wiki-callout-title { color: #fbbf24; }
+    .wiki-callout.linguistic .wiki-callout-title { color: var(--purple); }
+    .wiki-callout.math .wiki-callout-title { color: var(--success); }
+    .wiki-callout.warning .wiki-callout-title { color: var(--warning); }
     .wiki-callout p:last-child { margin-bottom: 0; }
 
     /* Tables */
@@ -226,9 +331,7 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
-    .wiki-table tr:last-child td {
-      border-bottom: none;
-    }
+    .wiki-table tr:last-child td { border-bottom: none; }
     .wiki-table code {
       font-family: var(--font-mono);
       font-size: 0.8rem;
@@ -239,7 +342,7 @@
       color: var(--accent);
     }
 
-    /* Math Formula Display */
+    /* Math Formulas */
     .formula-display {
       background: var(--bg-code);
       border: 1px solid var(--border);
@@ -247,7 +350,7 @@
       padding: 16px 20px;
       margin: 20px 0;
       font-family: var(--font-mono);
-      font-size: 0.95rem;
+      font-size: 0.92rem;
       color: #f1f5f9;
       text-align: center;
       overflow-x: auto;
@@ -282,80 +385,131 @@
       color: inherit;
     }
 
-    /* Inline Interactive Sandbox */
-    .sandbox-container {
-      background: var(--bg-content);
+    /* Mermaid Diagrams Container */
+    .mermaid-container {
+      background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 20px;
+      margin: 24px 0;
+      text-align: center;
+      overflow-x: auto;
+    }
+
+    /* Worked Numerical Example Card */
+    .trace-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-highlight);
+      border-radius: 8px;
+      padding: 24px;
       margin: 28px 0;
+    }
+    .trace-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 18px;
+    }
+    .trace-header h4 { margin: 0; color: var(--accent); font-size: 1.05rem; }
+    .trace-step {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed var(--border);
+    }
+    .trace-step:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+    .trace-step-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-faint);
+      margin-bottom: 6px;
+    }
+
+    /* Interactive Sandbox */
+    .sandbox-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-highlight);
+      border-radius: 8px;
+      padding: 24px;
+      margin: 32px 0;
     }
     .sandbox-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
-    .sandbox-header h4 { margin: 0; font-size: 0.95rem; }
+    .sandbox-header h4 { margin: 0; font-size: 1.05rem; color: #ffffff; }
     .sandbox-presets { display: flex; gap: 8px; flex-wrap: wrap; }
     .sandbox-preset-btn {
       background: var(--bg-subtle);
       border: 1px solid var(--border);
       color: var(--text-muted);
       font-size: 0.75rem;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 4px;
       cursor: pointer;
+      transition: all 0.12s;
     }
     .sandbox-preset-btn:hover {
       color: var(--text-main);
-      border-color: var(--border-highlight);
+      border-color: var(--accent);
+      background: var(--bg-content);
     }
     .sandbox-input {
       width: 100%;
       background: var(--bg-code);
       border: 1px solid var(--border);
-      border-radius: 4px;
+      border-radius: 6px;
       color: #ffffff;
-      padding: 12px;
+      padding: 14px;
       font-family: var(--font-mono);
       font-size: 0.88rem;
       resize: vertical;
-      min-height: 60px;
+      min-height: 64px;
       outline: none;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
+      transition: border-color 0.15s;
     }
     .sandbox-input:focus {
       border-color: var(--accent);
     }
     .sandbox-breakdown {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
     }
     .sandbox-box {
       background: var(--bg-code);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 10px 14px;
+      border-radius: 6px;
+      padding: 12px 14px;
       font-size: 0.78rem;
     }
     .sandbox-box-title {
       color: var(--text-faint);
       font-weight: 600;
       text-transform: uppercase;
-      font-size: 0.7rem;
+      font-size: 0.68rem;
+      letter-spacing: 0.05em;
       margin-bottom: 6px;
     }
     .sandbox-tokens {
       display: flex;
       flex-wrap: wrap;
-      gap: 5px;
+      gap: 6px;
     }
     .s-token {
       background: var(--bg-subtle);
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 3px;
       font-family: var(--font-mono);
       font-size: 0.74rem;
@@ -366,248 +520,382 @@
     .s-token.field { color: #86efac; border-color: #15803d; }
 
     /* Lists */
-    ul, ol {
-      margin-bottom: 16px;
-      padding-left: 24px;
-    }
-    li {
-      margin-bottom: 6px;
+    ul, ol { margin-bottom: 16px; padding-left: 24px; }
+    li { margin-bottom: 6px; }
+
+    /* Mobile toggle */
+    .mobile-menu-btn {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: #000000;
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      z-index: 100;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 960px) {
       .wiki-sidebar { display: none; }
-      .wiki-main { margin-left: 0; padding: 24px; }
+      .wiki-sidebar.open { display: block; width: 280px; }
+      .wiki-main { margin-left: 0; padding: 24px 20px 80px; }
+      .mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Left Documentation Tree Sidebar -->
-  <aside class="wiki-sidebar">
-    <a href="#overview" class="sidebar-brand">
-      <span class="sidebar-brand-title">Semantic Matcher</span>
-      <span class="sidebar-brand-subtitle">Technical Wiki • v0.2.0</span>
+  <!-- Left DeepWiki Sidebar Navigation -->
+  <aside class="wiki-sidebar" id="sidebar">
+    <a href="#sec-overview" class="sidebar-brand">
+      <span class="sidebar-brand-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        Semantic Matcher
+      </span>
+      <span class="sidebar-brand-subtitle">Technical DeepWiki • v0.2.0</span>
     </a>
 
+    <input type="text" class="sidebar-search" id="sidebarSearch" placeholder="Search wiki topics..." oninput="filterSidebar(this.value)">
+
     <div class="sidebar-group">
-      <div class="sidebar-group-title">1. Introduction</div>
+      <div class="sidebar-group-title">1. Overview</div>
       <ul class="sidebar-links">
-        <li><a href="#overview">System Overview</a></li>
-        <li><a href="#motivation">Why Algorithmic Matching?</a></li>
-        <li><a href="#architecture">Core Architecture</a></li>
+        <li><a href="#sec-overview">1.1 Purpose &amp; Scope</a></li>
+        <li><a href="#sec-invariants">1.2 Core Invariants</a></li>
+        <li><a href="#sec-linguistics">1.3 Germanic Motivations</a></li>
+        <li><a href="#sec-architecture">1.4 Architecture &amp; C4</a></li>
+        <li><a href="#sec-lifecycles">1.5 Execution Lifecycles</a></li>
       </ul>
     </div>
 
     <div class="sidebar-group">
-      <div class="sidebar-group-title">2. Mathematical Algorithms</div>
+      <div class="sidebar-group-title">2. Morphology Pipeline</div>
       <ul class="sidebar-links">
-        <li><a href="#algo-tokenization">1. Tokenization & NFKC</a></li>
-        <li><a href="#algo-decompounding">2. Kompositazerlegung</a></li>
-        <li><a href="#algo-stemming">3. Morphological Stemming</a></li>
-        <li><a href="#algo-fields">4. Wortfeld (Lexical Field) Theory</a></li>
-        <li><a href="#algo-tversky">5. Asymmetric Tversky Index</a></li>
-        <li><a href="#algo-cosine">6. Field Cosine & Damping</a></li>
-        <li><a href="#algo-triggers">7. Saturated Triggers</a></li>
-        <li><a href="#algo-fusion">8. Composite Scoring</a></li>
+        <li><a href="#sec-tokenization">2.1 NFKC &amp; Tokenizer</a></li>
+        <li><a href="#sec-decompounding">2.2 Kompositazerlegung</a></li>
+        <li><a href="#sec-stemming">2.3 Stemmer &amp; Umlauts</a></li>
       </ul>
     </div>
 
     <div class="sidebar-group">
-      <div class="sidebar-group-title">3. Module Reference</div>
+      <div class="sidebar-group-title">3. Semantic Vector Space</div>
       <ul class="sidebar-links">
-        <li><a href="#mod-tokenizer">morphology.tokenizer</a></li>
-        <li><a href="#mod-decompounder">morphology.decompounder</a></li>
-        <li><a href="#mod-stemmer">morphology.stemmer</a></li>
-        <li><a href="#mod-field-mapper">semantics.field_mapper</a></li>
-        <li><a href="#mod-indexer">storage.indexer</a></li>
-        <li><a href="#mod-markdown-loader">storage.markdown_loader</a></li>
-        <li><a href="#mod-oscal-loader">storage.oscal_loader (OSCAL 1.1.0)</a></li>
-        <li><a href="#mod-matcher">engine.matcher</a></li>
-        <li><a href="#mod-models">models</a></li>
-        <li><a href="#mod-guard">guard (v0.2.0)</a></li>
-        <li><a href="#mod-decorator">decorator</a></li>
-        <li><a href="#mod-formatter">formatter</a></li>
-        <li><a href="#mod-cli">cli</a></li>
+        <li><a href="#sec-wortfeld">3.1 13 Lexical Wortfelder</a></li>
+        <li><a href="#sec-kernel">3.2 Multi-Weight Kernel</a></li>
+        <li><a href="#sec-l2">3.3 L2 Cosine Equivalence</a></li>
       </ul>
     </div>
 
     <div class="sidebar-group">
-      <div class="sidebar-group-title">4. Integration & Packaging</div>
+      <div class="sidebar-group-title">4. Algorithmic Scoring</div>
       <ul class="sidebar-links">
-        <li><a href="#packaging-v02">v0.2.0 Packaging Setup</a></li>
-        <li><a href="#git-install">Direct Git Installation</a></li>
-        <li><a href="#extension-patterns">Python Extension Patterns</a></li>
+        <li><a href="#sec-tversky">4.1 Asymmetric Tversky</a></li>
+        <li><a href="#sec-damping">4.2 Morphological Damping</a></li>
+        <li><a href="#sec-triggers">4.3 Saturated Triggers</a></li>
+        <li><a href="#sec-amplification">4.4 Confidence Amplification</a></li>
+        <li><a href="#sec-numerical-trace">4.5 Worked Numerical Trace</a></li>
       </ul>
     </div>
 
     <div class="sidebar-group">
-      <div class="sidebar-group-title">5. NIST OSCAL Compliance</div>
+      <div class="sidebar-group-title">5. Storage &amp; OSCAL</div>
       <ul class="sidebar-links">
-        <li><a href="#oscal-overview">OSCAL Architecture & Standards</a></li>
-        <li><a href="#oscal-catalog">Catalog Ingestion & Export</a></li>
-        <li><a href="#oscal-component">Component Definition (SSPs)</a></li>
+        <li><a href="#sec-indexer">5.1 Pre-Indexing &amp; Cache</a></li>
+        <li><a href="#sec-json-dirs">5.2 JSON &amp; Directory Loader</a></li>
+        <li><a href="#sec-markdown">5.3 Markdown Parser</a></li>
+        <li><a href="#sec-oscal">5.4 NIST OSCAL 1.1.0</a></li>
       </ul>
     </div>
 
     <div class="sidebar-group">
-      <div class="sidebar-group-title">6. Interactive Console</div>
+      <div class="sidebar-group-title">6. API &amp; Integration</div>
       <ul class="sidebar-links">
-        <li><a href="#sandbox">Live Algorithm Console</a></li>
+        <li><a href="#sec-guard">6.1 PolicyGuard &amp; Functions</a></li>
+        <li><a href="#sec-decorator">6.2 Function Decorator</a></li>
+        <li><a href="#sec-cli">6.3 CLI &amp; CI/CD Gating</a></li>
+        <li><a href="#sec-models">6.4 Data Models &amp; Schemas</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">7. Verification &amp; Invariants</div>
+      <ul class="sidebar-links">
+        <li><a href="#sec-latency">7.1 Latency Analysis</a></li>
+        <li><a href="#sec-determinism">7.2 Determinism Guarantees</a></li>
+        <li><a href="#sec-tests">7.3 Test Verification Suite</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">8. Interactive Sandbox</div>
+      <ul class="sidebar-links">
+        <li><a href="#sec-sandbox">Live Execution Sandbox</a></li>
       </ul>
     </div>
   </aside>
 
-  <!-- Main Wiki Article Container -->
+  <button class="mobile-menu-btn" onclick="toggleSidebar()" aria-label="Toggle Navigation">☰</button>
+
+  <!-- Main Technical Wiki Container -->
   <main class="wiki-main">
 
-    <!-- Title & Metadata -->
+    <!-- Header Section -->
     <header>
-      <h1 id="overview">Semantic Matcher: Algorithmic Natural Language Policy Guardrail</h1>
+      <h1>Semantic Matcher: Technical Architecture DeepWiki</h1>
       <div class="wiki-meta">
-        <div class="wiki-meta-item">Version: <strong>0.2.0</strong></div>
-        <div class="wiki-meta-item">Runtime Latency: <strong>~0.25 ms</strong></div>
-        <div class="wiki-meta-item">Languages: <strong>West-Germanic (DE, EN, NL)</strong></div>
-        <div class="wiki-meta-item">License: <strong>BSD-3-Clause</strong></div>
-        <div class="wiki-meta-item">Zero External Runtime APIs: <strong>Deterministic</strong></div>
+        <div>Version: <strong>0.2.0</strong></div>
+        <div class="wiki-badge blue">Inference: ~0.25 ms</div>
+        <div class="wiki-badge green">Deterministic: 100%</div>
+        <div class="wiki-badge purple">West-Germanic (DE, EN, NL)</div>
+        <div>Standard: <strong>NIST OSCAL 1.1.0</strong></div>
+        <div>License: <strong>BSD-3-Clause</strong></div>
       </div>
     </header>
 
-    <!-- Overview Content -->
-    <section>
+    <!-- 1. Overview & System Architecture -->
+    <section id="sec-overview">
+      <h2>1. Overview &amp; System Architecture</h2>
+
+      <details class="wiki-sources" open>
+        <summary>Relevant source files</summary>
+        <ul>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/__init__.py">src/semantic_matcher/__init__.py</a></code> — Public extension symbols and module exports</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/models.py">src/semantic_matcher/models.py</a></code> — Core dataclasses (<code>Policy</code>, <code>DecomposedText</code>, <code>PredecomposedPolicy</code>, <code>MatchResult</code>)</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/engine/matcher.py">src/semantic_matcher/engine/matcher.py</a></code> — Core 3-tier scoring and matching engine</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/engine/factory.py">src/semantic_matcher/engine/factory.py</a></code> — Decoupled initialization factory and default path resolution</li>
+        </ul>
+      </details>
+
       <p>
-        <strong>Semantic Matcher</strong> is an algorithmic, deterministic policy guardrail designed to associate natural language prompts with predefined governance policies.
-        Unlike typical LLM-based guardrails (such as Llama Guard or NeMo Guardrails) which invoke neural network inferences over an API at latencies between 200ms and 800ms, Semantic Matcher relies on an offline pre-compiled index and a 3-tier mathematical scoring algorithm executing in approximately <strong>0.25 milliseconds</strong>.
+        <strong>Semantic Matcher</strong> is a deterministic, algorithmic policy guardrail engineered to evaluate natural language prompts against organizational policies, security baselines, and legal frameworks (such as GDPR, the EU AI Act, NIST SP 800-53, and the OWASP Top 10 for LLMs).
       </p>
 
-      <div class="wiki-callout perf">
-        <div class="wiki-callout-title">Engineering Invariant</div>
-        <p>
-          The engine operates without runtime network requests, external tokenizer downloads, PyTorch runtimes, or floating-point embeddings.
-          All semantic representations, morpheme dictionaries, and policy indices are stored in self-contained JSON data assets and pre-compiled into memory on startup.
-        </p>
+      <h3 id="sec-invariants">1.2 Core Architectural Invariants</h3>
+      <table class="wiki-table">
+        <thead>
+          <tr>
+            <th>Engineering Invariant</th>
+            <th>Implementation Mechanism</th>
+            <th>Operational Impact</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Sub-Millisecond Execution</strong></td>
+            <td>Pure closed-form mathematics; offline pre-decomposed policy cache (<code>policy_index.json</code>).</td>
+            <td>Matches in <strong>~0.25 ms</strong> (approx. 4,000 queries/sec/core) without blocking API gateways.</td>
+          </tr>
+          <tr>
+            <td><strong>Strict Determinism</strong></td>
+            <td>Discrete set operations and IEEE-754 floating-point equations without stochastic sampling.</td>
+            <td>Zero temperature jitter, zero hallucinations, and 100% reproducible compliance audit trails.</td>
+          </tr>
+          <tr>
+            <td><strong>Zero Runtime Network I/O</strong></td>
+            <td>Self-contained dictionaries, lexical field matrices, and OSCAL catalogs.</td>
+            <td>Runs in air-gapped VPCs, edge environments, and containers with no external API keys.</td>
+          </tr>
+          <tr>
+            <td><strong>Zero Heavy Dependencies</strong></td>
+            <td>Standard library implementation; no PyTorch, TensorFlow, HuggingFace, or TorchScript.</td>
+            <td>Instant cold-start (&lt;10ms) and minimal RSS memory footprint (&lt;10MB).</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 id="sec-linguistics">1.3 Why Algorithmic Matching for West-Germanic Languages?</h3>
+      <p>
+        Standard similarity metrics (such as Levenshtein distance, Jaccard similarity, TF-IDF vectorization, or Byte-Pair Encoding subword tokenizers) exhibit documented failure modes when evaluating West-Germanic languages (German, Dutch, English):
+      </p>
+      <ul>
+        <li>
+          <strong>Agglutinative Compounding (Komposita):</strong> In German and Dutch, multi-word concepts fuse into unbroken orthographic tokens (e.g. <code>"Tastaturanschlagprotokollierung"</code> = <em>keystroke logging</em>). Naive tokenizers treat this as an unknown token, causing exact keyword lookups for <code>tastatur</code> or <code>anschlag</code> to fail completely.
+        </li>
+        <li>
+          <strong>Linking Interfixes (Fugenlaute):</strong> Germanic morphemes insert phonetic linking sounds during compounding (e.g. <code>"Arbeit"</code> + <code>"s"</code> + <code>"platz"</code> = <code>"Arbeitsplatz"</code>). Simple substring search corrupts stems unless interfixes $F = \{\text{"s"}, \text{"es"}, \text{"en"}, \text{"n"}, \text{"er"}, \text{"e"}\}$ are explicitly modeled and stripped.
+        </li>
+        <li>
+          <strong>Plural Umlaut Mutation:</strong> German plurals systematically alter root vowels (e.g. <code>"Anschlag"</code> &rarr; <code>"Anschläge"</code>; <code>"Passwort"</code> &rarr; <code>"Passwörter"</code>). Standard stemmers leave mutated vowels, resulting in zero lexical overlap.
+        </li>
+        <li>
+          <strong>Prompt vs. Policy Length Asymmetry:</strong> A user prompt is typically 5 to 20 words, while an institutional policy is 50 to 200 words. Symmetric metrics (like Jaccard) penalize short prompts heavily because the denominator contains the entire policy text.
+        </li>
+      </ul>
+
+      <h3 id="sec-architecture">1.4 High-Level System Architecture</h3>
+      <p>
+        The following component diagram illustrates the decoupling between consumers, runtime inference modules, and offline storage:
+      </p>
+
+      <div class="mermaid-container">
+        <div class="mermaid">
+flowchart TD
+    UserPrompt["Natural Language Prompt (DE / EN / NL)"] --> Tokenizer["morphology.tokenizer<br/>(NFKC Normalization + Stopword Filtering)"]
+    Tokenizer --> Decompounder["morphology.decompounder<br/>(Recursive Split + Fugenlaute s/es/en)"]
+    Decompounder --> Stemmer["morphology.stemmer<br/>(42 German + 36 English Affixes + Umlaut Fix)"]
+    
+    subgraph OnlineRuntime ["Online Runtime Inference (~0.25ms)"]
+        Stemmer --> FieldMapper["semantics.field_mapper<br/>(13 Wortfelder L2 Unit Vector)"]
+        FieldMapper --> Matcher["engine.matcher.SemanticMatcher"]
+        
+        Matcher --> Tier1["Tier 1: Asymmetric Tversky Index<br/>(beta = 0.05)"]
+        Matcher --> Tier2["Tier 2: Damped Field Cosine<br/>(Dot Product * gamma)"]
+        Matcher --> Tier3["Tier 3: Saturated Triggers<br/>(Sum / 3.0)"]
+        
+        Tier1 --> Fusion["Multi-Signal Fusion<br/>(0.35 * M + 0.40 * F + 0.25 * T)"]
+        Tier2 --> Fusion
+        Tier3 --> Fusion
+        
+        Fusion --> Amplification["Piecewise Confidence Amplification"]
+        Amplification --> MatchResults["Ranked MatchResult Objects<br/>(0.0% - 100.0%)"]
+    end
+
+    subgraph OfflineStorage ["Offline Policy Ingestion & Indexing"]
+        Policies["Policy Sources<br/>(JSON / Markdown / NIST OSCAL 1.1.0)"] --> Indexer["storage.indexer.PolicyIndexer"]
+        Indexer --> DiskCache[("Disk Cache<br/>policy_index.json")]
+        DiskCache -.->|"mtime-validated startup load"| Matcher
+    end
+
+    MatchResults --> Interfaces["Consumer Interfaces:<br/>PolicyGuard / @semantic_matcher / CLI / CI Gating"]
+        </div>
       </div>
 
-      <h2 id="motivation">Why Algorithmic Matching for West-Germanic Languages?</h2>
+      <h3 id="sec-lifecycles">1.5 Execution Lifecycles</h3>
       <p>
-        Standard bag-of-words algorithms, TF-IDF vectorizers, and byte-pair encoding (BPE) subword tokenizers exhibit documented failure modes when evaluating West-Germanic languages (German, Dutch, English):
+        The execution lifecycle splits strictly into an <strong>Offline Compilation Phase</strong> and an <strong>Online Matching Phase</strong>:
       </p>
-      <ol>
-        <li>
-          <strong>Agglutinative Compounding:</strong> In German and Dutch, multi-word concepts fuse into a single unbroken orthographic token (e.g., <code>"Tastaturanschlagprotokollierung"</code> = keystroke logging). A standard string search or vocabulary lookup for <code>"tastatur"</code> or <code>"anschlag"</code> fails completely because the token is stored as a single compound.
-        </li>
-        <li>
-          <strong>Linking Interfixes (Fugenlaute):</strong> When Germanic nouns compound, phonetic linking morphemes are inserted (e.g., <code>"Arbeit"</code> + <code>"s"</code> + <code>"platz"</code> = <code>"Arbeitsplatz"</code>). A naive substring splitter will leave corrupted stems unless interfixes are explicitly modeled.
-        </li>
-        <li>
-          <strong>Morphological Umlaut Mutation:</strong> German plurals and verb inflections alter root vowel phonemes (e.g., <code>"Anschlag"</code> &rarr; <code>"Anschläge"</code>; <code>"Passwort"</code> &rarr; <code>"Passwörter"</code>). Without linguistic vowel restoration, stem intersection drops to zero.
-        </li>
-        <li>
-          <strong>Prompt vs. Document Asymmetry:</strong> A user prompt is typically 5 to 25 words in length, while an institutional governance policy comprises 50 to 200 words. Symmetrical similarity metrics (like Jaccard or Dice) penalize short prompts heavily because the denominator contains the entire policy text.
-        </li>
-      </ol>
+
+      <div class="mermaid-container">
+        <div class="mermaid">
+sequenceDiagram
+    autonumber
+    participant Caller as Application / Guardrail
+    participant Matcher as SemanticMatcher Engine
+    participant Morph as Morphology Pipeline
+    participant Semantics as Lexical Field Mapper
+    participant Index as Pre-Indexed Policies
+
+    Caller->>Matcher: match(prompt="extract customer passwords", threshold=60.0)
+    Matcher->>Morph: Tokenize (NFKC) -> Split Compounds -> Stem & Fix Umlauts
+    Morph-->>Matcher: Decomposed Lemmas: ["extract", "custom", "passwort"]
+    Matcher->>Semantics: Compute 13-Dimensional L2 Unit Vector
+    Semantics-->>Matcher: Prompt Vector u (||u||2 = 1.0)
+    
+    loop For each PredecomposedPolicy v in Index
+        Matcher->>Matcher: 1. Calculate Asymmetric Tversky Index S_morph
+        Matcher->>Matcher: 2. Calculate Damped Vector Cosine S_field = (u · v) * gamma
+        Matcher->>Matcher: 3. Accumulate Trigger Keyword Weights S_trigger
+        Matcher->>Matcher: 4. Base Composite Score S_raw = 0.35*M + 0.40*F + 0.25*T
+        Matcher->>Matcher: 5. Evaluate Piecewise Confidence Amplification
+    end
+    
+    Matcher-->>Caller: Sorted List[MatchResult] (Top Matches >= 60.0%)
+        </div>
+      </div>
     </section>
 
-    <!-- Architecture & Data Flow -->
-    <section id="architecture">
-      <h2>Architecture & End-to-End Data Pipeline</h2>
+    <!-- 2. Linguistic Morphology Pipeline -->
+    <section id="sec-tokenization">
+      <h2>2. Linguistic Morphology Pipeline</h2>
+
+      <details class="wiki-sources" open>
+        <summary>Relevant source files</summary>
+        <ul>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/morphology/tokenizer.py">src/semantic_matcher/morphology/tokenizer.py</a></code> — NFKC normalization and bilingual stopword filtering</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/morphology/decompounder.py">src/semantic_matcher/morphology/decompounder.py</a></code> — Recursive compound splitting and interfix elimination</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/morphology/stemmer.py">src/semantic_matcher/morphology/stemmer.py</a></code> — Rule-based affix stripping, irregular overrides, and umlaut mutation fix</li>
+        </ul>
+      </details>
+
+      <h3>2.1 Unicode Normalization (NFKC) &amp; Tokenization</h3>
       <p>
-        The matching pipeline splits strictly into an <em>Offline Pre-Indexing Phase</em> and an <em>Online Inference Phase</em>:
-      </p>
-
-      <pre><code>[Offline Phase: Policy Compilation]
-Policies (JSON / Markdown) 
-  ──&gt; Tokenize ──&gt; Kompositazerlegung ──&gt; Suffix Stemming ──&gt; Wortfeld Projection (L2)
-  ──&gt; Serialized into data/policy_index.json
-
-[Online Phase: Runtime Matching (~0.25ms)]
-User Prompt
-  ──&gt; 1. NFKC Unicode Normalization &amp; Stopword Filtering
-  ──&gt; 2. Recursive West-Germanic Decompounding (Fugen-s/es/en)
-  ──&gt; 3. Longest-Match Suffix Stemming &amp; Umlaut Normalization
-  ──&gt; 4. Lexical Field (Wortfeld) Vector Projection &amp; L2 Normalization
-  ──&gt; 5. Multi-Signal Scoring Engine:
-         ├─ Tier 1: Asymmetric Tversky Index (Morphological Overlap)
-         ├─ Tier 2: Lexical Field Cosine Similarity with Morphological Damping
-         └─ Tier 3: High-Signal Saturated Trigger Weights
-  ──&gt; 6. Confidence Amplification Calibration
-  ──&gt; Output: Ranked MatchResult Objects with Match Percentage (0.0% - 100.0%)</code></pre>
-    </section>
-
-    <!-- Algorithms Breakdown -->
-    <section id="algo-tokenization">
-      <h2>Algorithmic Formulation</h2>
-
-      <h3>1. Tokenization and Normalization</h3>
-      <p>
-        Located in <code>semantic_matcher.morphology.tokenizer</code>.
-        The raw input string $T$ is first normalized using Unicode Standard Normalization Form KC (NFKC), resolving compatibility characters and stripping non-printing control codes.
+        The raw input string passes through Unicode Normalization Form KC (<code>unicodedata.normalize("NFKC", text)</code>). This converts compatibility ligatures (e.g. <code>"ﬁ"</code> &rarr; <code>"fi"</code>) and full-width forms into standard Latin characters, preventing zero-width obfuscation attacks.
       </p>
       <p>
-        The normalized text is lowercased and passed through regular expression matching <code>[a-zäöüß0-9]+</code> to extract alphanumeric words while preserving German umlauts and the Eszett.
-        A curated bilingual stopword set $S_{\text{stop}}$ ($|S_{\text{stop}}| &gt; 150$) filters out functional particles (articles, prepositions, conjunctions, modal auxiliaries):
+        Extraction is performed via regular expression matching <code>[a-zäöüß0-9]+</code> to preserve German umlauts and the Eszett. A curated set of <strong>160 bilingual stopwords</strong> (82 English + 78 German function words) filters out modal auxiliaries (<code>"können"</code>, <code>"würde"</code>, <code>"should"</code>), articles, and conjunctions.
       </p>
-      <div class="formula-display">
-        W_0 = \{ w \in \text{RegexSplit}(\text{NFKC}(T)) \mid w \notin S_{\text{stop}} \land |w| &gt; 1 \}
+
+      <h3 id="sec-decompounding">2.2 West-Germanic Kompositazerlegung &amp; Fugenelemente</h3>
+      <p>
+        German compounds fuse root words with optional linking interfixes (**Fugenlaute**). The <code>Decompounder</code> recursively splits words using an in-memory seed lexicon $V$ of verified Germanic stems ($|V| > 350$).
+      </p>
+
+      <div class="mermaid-container">
+        <div class="mermaid">
+flowchart TD
+    Start(["Token: w"]) --> CheckLen{"Length >= 6?"}
+    CheckLen -- No --> ReturnWord["Return [w]"]
+    CheckLen -- Yes --> LoopPrefix["Iterate split index i from 3 to |w|-3"]
+    
+    LoopPrefix --> TestPrefix{"w[0:i] in Lexicon V?"}
+    TestPrefix -- No --> NextI["Next i"]
+    NextI --> LoopPrefix
+    
+    TestPrefix -- Yes --> TestRemainder{"w[i:] in Lexicon V?"}
+    TestRemainder -- Yes --> DirectSplit["Return [prefix, remainder]"]
+    
+    TestRemainder -- No --> RecurseRemainder{"Decomp(remainder)?"}
+    RecurseRemainder -- Yes --> RecurseSplit["Return [prefix] + sub_split"]
+    
+    RecurseRemainder -- No --> CheckFugen{"Remainder starts with<br/>Fugenelement f in F?"}
+    CheckFugen -- No --> NextI
+    
+    CheckFugen -- Yes --> TestFugenRest{"remainder[len(f):] in V<br/>or Decomp(fugen_rest)?"}
+    TestFugenRest -- Yes --> DiscardFugen["Discard f!<br/>Return [prefix] + fugen_rest"]
+    TestFugenRest -- No --> NextI
+        </div>
       </div>
-
-      <h3 id="algo-decompounding">2. West-Germanic Compound Word Splitting (Kompositazerlegung)</h3>
-      <p>
-        Located in <code>semantic_matcher.morphology.decompounder</code>.
-        German noun compounds are split recursively using a seed lexicon $V$ containing verified West-Germanic root morphemes, augmented dynamically by vocabulary extracted from the lexical fields.
-      </p>
-      <p>
-        For every token $w$ with length $|w| \ge 2 \cdot L_{\min}$ (where $L_{\min} = 3$), the algorithm searches for a split point $i \in [L_{\min}, |w| - L_{\min}]$ such that prefix $p = w[0:i] \in V$.
-        If the remaining slice $r = w[i:]$ is directly in $V$, the decomposition terminates with $[p, r]$.
-        If not, the algorithm attempts recursive decomposition on $r$.
-      </p>
-      <p>
-        Crucially, if a direct split is not found, the algorithm tests whether $r$ begins with an interfix (<strong>Fugenelement</strong>) $f \in F$, where:
-      </p>
-      <div class="formula-display">
-        F = \{ \text{"s"}, \text{"es"}, \text{"en"}, \text{"n"}, \text{"er"}, \text{"e"} \}
-      </div>
-      <p>
-        If $r = f + r'$ and $r'$ can be verified in $V$ or recursively decomposed, the interfix $f$ is consumed and discarded, yielding morphemes $[p, r']$.
-      </p>
 
       <div class="wiki-callout linguistic">
-        <div class="wiki-callout-title">Linguistic Example: Fugenelement Elimination</div>
+        <div class="wiki-callout-title">Decompounding Walkthrough: "Arbeitsplatzüberwachung"</div>
         <p>
-          Given <code>"arbeitsplatz"</code>:<br>
-          Prefix <code>"arbeit"</code> is identified in $V$. The remainder is <code>"splatz"</code>.<br>
-          <code>"splatz"</code> is not in $V$. The interfix test matches <code>f = "s"</code>.<br>
-          Remaining suffix <code>r' = "platz"</code> is matched in $V$.<br>
-          Output morphemes: <code>["arbeit", "platz"]</code>.
+          1. $w = \text{"arbeitsplatzüberwachung"}$.<br>
+          2. Prefix scan identifies $i=6$: prefix <code>"arbeit"</code> $\in V$. The remainder is <code>"splatzüberwachung"</code>.<br>
+          3. <code>"splatzüberwachung"</code> is not in $V$. The interfix test matches $f = \text{"s"}$.<br>
+          4. Remaining slice is <code>"platzüberwachung"</code>. Recursive decomposition identifies prefix <code>"platz"</code> $\in V$ and remainder <code>"überwachung"</code> $\in V$.<br>
+          5. <strong>Resulting Morphemes:</strong> <code>["arbeit", "platz", "überwachung"]</code>.
         </p>
       </div>
 
-      <h3 id="algo-stemming">3. Morphological Stemming &amp; Umlaut Mutation Fix</h3>
+      <h3 id="sec-stemming">2.3 Morphological Stemming &amp; Umlaut Mutation Fix</h3>
       <p>
-        Located in <code>semantic_matcher.morphology.stemmer</code>.
-        Morphemes obtained from compound decomposition are normalized to stem forms.
-        Processing proceeds through three ordered stages:
+        Morphemes pass through three strictly ordered stemming stages:
       </p>
       <ol>
+        <li><strong>Irregular Overrides:</strong> Fast lookup in <code>STEM_OVERRIDES</code> intercepts irregular plurals and preterite forms (e.g. <code>"anschläge" &rarr; "anschlag"</code>, <code>"passwörter" &rarr; "passwort"</code>, <code>"databases" &rarr; "databas"</code>).</li>
+        <li><strong>Descending Suffix Stripping:</strong> 42 German suffixes (from 9-character <code>-schaften</code> down to 1-character <code>-t</code>) and 36 English affixes are evaluated in descending length order. Suffixes are stripped only if the remaining stem length satisfies $|w_{\text{stem}}| \ge 3$.</li>
         <li>
-          <strong>Irregular Override Lookup:</strong> An explicit hash table corrects irregular plurals, preterite forms, and technical words (e.g., <code>"anschläge" &rarr; "anschlag"</code>, <code>"passwörter" &rarr; "passwort"</code>, <code>"databases" &rarr; "databas"</code>).
-        </li>
-        <li>
-          <strong>German Suffix Stripping:</strong> A list of 42 nominal and verbal German suffixes (e.g., <code>-schaften</code>, <code>-igkeiten</code>, <code>-ungen</code>, <code>-heiten</code>, <code>-lich</code>, <code>-isch</code>, <code>-ung</code>, <code>-en</code>) is checked in descending order of length, stripping the longest matching suffix if the remaining stem length satisfies $|w_{\text{stem}}| \ge 3$.
-        </li>
-        <li>
-          <strong>Umlaut Restoration:</strong> Suffix removal frequently leaves plural vowel mutations. The stemmer systematically restores modified vowels:
+          <strong>Umlaut Mutation Restoration:</strong> Suffix removal frequently leaves plural vowel mutations. The stemmer systematically restores modified root vowels:
           <div class="formula-display">ä \mapsto a, \quad ö \mapsto o, \quad ü \mapsto u</div>
         </li>
-        <li>
-          <strong>English Suffix Stripping:</strong> 36 English derivational and inflectional suffixes (e.g., <code>-ational</code>, <code>-ization</code>, <code>-iveness</code>, <code>-ing</code>, <code>-ed</code>, <code>-es</code>) are evaluated if no German suffix matched.
-        </li>
       </ol>
-
-      <h3 id="algo-fields">4. Semantic Lexical Field (Wortfeld) Projection</h3>
       <p>
-        Located in <code>semantic_matcher.semantics.field_mapper</code>.
-        Rooted in Jost Trier's structural linguistic <em>Wortfeldtheorie</em> (1931), the vocabulary is organized into 12 conceptual lexical fields:
+        Calls to <code>stem_word()</code> are cached using <code>@functools.lru_cache(maxsize=8192)</code>, achieving sub-microsecond stem resolution (~0.08 µs).
       </p>
+    </section>
+
+    <!-- 3. Semantic Vector Space -->
+    <section id="sec-wortfeld">
+      <h2>3. Semantic Lexical Field Vector Space</h2>
+
+      <details class="wiki-sources" open>
+        <summary>Relevant source files</summary>
+        <ul>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/semantics/field_mapper.py">src/semantic_matcher/semantics/field_mapper.py</a></code> — 13-field projection, multi-weight kernel, and L2 cosine calculation</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/data/lexical_fields.json">data/lexical_fields.json</a></code> — Master vocabulary dictionaries for all 13 conceptual fields</li>
+        </ul>
+      </details>
+
+      <p>
+        Based on Jost Trier's <em>Wortfeldtheorie</em> (1931), the vocabulary is organized into **13 formal conceptual fields** spanning cybersecurity, governance, and regulatory compliance:
+      </p>
+
       <table class="wiki-table">
         <thead>
           <tr>
@@ -617,408 +905,377 @@ User Prompt
           </tr>
         </thead>
         <tbody>
-          <tr><td><code>PRIVACY</code></td><td>Personal identification, GDPR/DSGVO, biometrics</td><td>daten, person, dsgvo, biometrie, fingerabdruck</td></tr>
-          <tr><td><code>CREDENTIALS</code></td><td>Authentication tokens, keys, secrets</td><td>passwort, login, token, pin, credentials, auth</td></tr>
-          <tr><td><code>SURVEILLANCE</code></td><td>Monitoring, telemetry, keylogging, keystrokes</td><td>überwachung, tastaturanschlag, webcam, screen</td></tr>
-          <tr><td><code>HR_EMPLOYMENT</code></td><td>Workforce management, productivity metrics</td><td>mitarbeiter, leistung, bewertung, personal</td></tr>
-          <tr><td><code>IP_SECRET</code></td><td>Trade secrets, source code, confidential financials</td><td>geschäftsgeheimnis, quellcode, roadmap, patent</td></tr>
-          <tr><td><code>EXPLOIT</code></td><td>Vulnerabilities, buffer overflows, payloads</td><td>schwachstelle, lücke, exploit, injection, sql</td></tr>
-          <tr><td><code>INJECTION</code></td><td>Jailbreaks, prompt manipulation, instruction bypass</td><td>jailbreak, override, ignore, system prompt</td></tr>
-          <tr><td><code>DISINFO</code></td><td>Impersonation, fabricated identity, deepfakes</td><td>täuschen, fälschen, impersonate, deepfake</td></tr>
-          <tr><td><code>RESOURCE_DOS</code></td><td>Resource exhaustion, quota drain, recursion bombs</td><td>überlastung, dos, flood, loop, exhaustion</td></tr>
+          <tr><td><code>PRIVACY</code></td><td>GDPR/DSGVO, personal data, biometrics, identifiers</td><td>daten, person, dsgvo, biometrie, fingerprint, patient</td></tr>
+          <tr><td><code>SURVEILLANCE</code></td><td>Workplace monitoring, telemetry, keylogging, cameras</td><td>überwachung, tastaturanschlag, webcam, screen, keylogger</td></tr>
+          <tr><td><code>HR_EMPLOYMENT</code></td><td>Workforce relations, labor law, hiring, evaluations</td><td>mitarbeiter, personal, arbeitsplatz, kündigung, gehalt</td></tr>
+          <tr><td><code>SECURITY</code></td><td>Exploits, vulnerabilities, attack payloads, malware</td><td>exploit, schwachstelle, payload, injektion, buffer overflow</td></tr>
+          <tr><td><code>PROMPT_INJECTION</code></td><td>Jailbreaking, instruction bypass, prompt extraction</td><td>jailbreak, override, bypass, system prompt, instructions</td></tr>
+          <tr><td><code>IP_SECRET</code></td><td>Trade secrets, proprietary code, internal financials</td><td>geschäftsgeheimnis, quellcode, patent, internal roadmap</td></tr>
+          <tr><td><code>CREDENTIALS</code></td><td>Authentication tokens, API keys, passwords, hashes</td><td>passwort, token, api key, credentials, auth, login</td></tr>
+          <tr><td><code>HIGH_STAKES_DECISION</code></td><td>Automated scoring, candidate screening, credit loans</td><td>automated decision, scoring, bonität, credit, loan</td></tr>
+          <tr><td><code>DECEPTION</code></td><td>Disinformation, deepfakes, impersonation, phishing</td><td>disinformation, deepfake, fälschung, impersonate, hoax</td></tr>
+          <tr><td><code>LEGAL_COMPLIANCE</code></td><td>Regulatory audits, statutory standards, liability</td><td>regulation, compliance, audit, gesetz, richtlinie</td></tr>
+          <tr><td><code>MEDICAL_LEGAL_ADVICE</code></td><td>Unlicensed legal, medical, or financial counsel</td><td>medical, diagnose, anwalt, legal, anlageberatung</td></tr>
+          <tr><td><code>HARMFUL_OPS</code></td><td>Weapons, toxic synthesis, physical violence, terror</td><td>weapon, bombe, sprengstoff, gift, cbrn, synthesize</td></tr>
+          <tr><td><code>RESOURCE_ABUSE</code></td><td>Denial of Service, scraping, quota exhaustion, loops</td><td>ddos, dos, flood, scraping, endlosschleife, brute force</td></tr>
         </tbody>
       </table>
 
+      <h3 id="sec-kernel">3.2 3-Tier Multi-Weight Activation Kernel</h3>
       <p>
-        For a set of decomposed prompt tokens $T$, the activation $A_f$ for field $f$ is computed using a multi-weight kernel:
+        For a set of decomposed prompt tokens $T$, the activation $A_f(T)$ for field $f$ is accumulated via:
       </p>
       <div class="formula-display">
         A_f(T) = \sum_{t \in T} \begin{cases} 
-          1.0 & \text{if } t \in \text{FieldWords}(f) \\
-          0.8 & \text{if } \text{stem}(t) \in \text{StemmedFieldWords}(f) \\
-          0.5 & \text{if } \exists w \in \text{FieldWords}(f) \text{ s.t. } |w| \ge 4 \land w \subseteq t \\
+          1.0 & \text{if } t \in \text{fields}[f] \quad \text{(Direct exact word match)} \\
+          0.8 & \text{if } \text{stem}(t) \in \text{stemmed\_fields}[f] \quad \text{(Morphological stem match)} \\
+          0.5 & \text{if } |t| \ge 4 \land \exists w \in \text{compound\_fragments}[f] : w \subseteq t \quad \text{(Substring)} \\
           0.0 & \text{otherwise}
         \end{cases}
       </div>
+
+      <h3 id="sec-l2">3.3 Euclidean L2 Normalization &amp; Fast Cosine Dot Product</h3>
       <p>
-        The resulting 12-dimensional vector $\vec{A} = [A_1, A_2, \dots, A_{12}]$ is normalized to unit length via Euclidean $L_2$ normalization:
+        The resulting 13-dimensional vector $\vec{A}$ is normalized to unit length via Euclidean $L_2$ norm:
       </p>
       <div class="formula-display">
-        \vec{u} = \frac{\vec{A}}{\|\vec{A}\|_2} = \frac{\vec{A}}{\sqrt{\sum_{i=1}^{12} A_i^2}}
+        \|\vec{A}\|_2 = \sqrt{\sum_{i=1}^{13} A_i^2}, \quad \vec{u} = \frac{\vec{A}}{\|\vec{A}\|_2}
       </div>
-
-      <h3 id="algo-tversky">5. Tier 1: Asymmetric Tversky Index ($S_{\text{morph}}$)</h3>
       <p>
-        Located in <code>semantic_matcher.engine.matcher</code>.
-        To evaluate lexical overlap between the prompt lemmas $L_p$ and policy lemmas $L_{\text{pol}}$, the engine uses an Asymmetric Tversky Index:
+        Because both prompt vector $\vec{u}$ and pre-indexed policy vector $\vec{v}$ are strictly unit-normalized ($\|\vec{u}\|_2 = 1, \|\vec{v}\|_2 = 1$), their cosine similarity reduces to a fast dot product executing in under 2 microseconds:
+      </p>
+      <div class="formula-display">
+        \cos(\vec{u}, \vec{v}) = \vec{u} \cdot \vec{v} = \sum_{i=1}^{13} u_i \cdot v_i
+      </div>
+    </section>
+
+    <!-- 4. Algorithmic Scoring Engine -->
+    <section id="sec-tversky">
+      <h2>4. Algorithmic Scoring Engine</h2>
+
+      <details class="wiki-sources" open>
+        <summary>Relevant source files</summary>
+        <ul>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/engine/matcher.py">src/semantic_matcher/engine/matcher.py</a></code> — Tversky calculation, damping, triggers, and piecewise amplification</li>
+        </ul>
+      </details>
+
+      <h3>4.1 Tier 1: Asymmetric Tversky Index ($S_{\text{morph}}$)</h3>
+      <p>
+        To compare prompt lemmas $L_p$ against extensive policy lemmas $L_{\text{pol}}$ without penalizing concise prompts, Semantic Matcher applies an Asymmetric Tversky Index with $\beta = 0.05$:
       </p>
       <div class="formula-display">
         S_{\text{morph}} = \frac{|L_p \cap L_{\text{pol}}|}{|L_p| + \beta \cdot |L_{\text{pol}} \setminus L_p|}
       </div>
       <p>
-        Where $\beta = 0.05$. Because $\beta \ll 1$, the index does not unduly penalize the prompt for failing to mention every concept in the extensive policy text, provided that a significant fraction of the prompt's own lemmas are aligned with the policy.
+        In symmetric metrics like Jaccard ($\beta = 1.0$), matching 3 words against a 50-word policy scores a negligible $\frac{3}{3 + 47} = 6.0\%$. With $\beta = 0.05$, the denominator is $3 + 0.05 \times 47 = 5.35$, yielding $\frac{3}{5.35} = \mathbf{56.1\%}$.
       </p>
 
-      <h3 id="algo-cosine">6. Tier 2: Lexical Field Cosine &amp; Morphological Damping ($S_{\text{field}}$)</h3>
+      <h3 id="sec-damping">4.2 Tier 2: Lexical Field Cosine &amp; Morphological Damping ($S_{\text{field}}$)</h3>
       <p>
-        Because vectors $\vec{u}$ (prompt) and $\vec{v}$ (pre-computed policy) are unit-normalized ($L_2 = 1$), their cosine similarity reduces to their dot product:
+        In short prompts, a single ambiguous word can produce high vector cosine with a policy. To suppress ungrounded vector alignments, raw cosine is attenuated by the **Morphological Damping Factor** $\gamma$:
       </p>
       <div class="formula-display">
-        S_{\text{field, raw}} = \vec{u} \cdot \vec{v} = \sum_{i=1}^{12} u_i \cdot v_i
-      </div>
-      <p>
-        <strong>Morphological Damping Factor:</strong> In short prompts, general words can activate a semantic field without referring to an actionable policy violation. To suppress false positive vector alignments, $S_{\text{field, raw}}$ is scaled by a damping factor based on the proportion of prompt tokens that found direct lexical support in the policy:
-      </p>
-      <div class="formula-display">
-        \gamma = \min\left(1.0, \, 0.4 + 0.6 \cdot \frac{|T_{\text{matched}}|}{|T_{\text{prompt}}|}\right), \quad S_{\text{field}} = S_{\text{field, raw}} \cdot \gamma
+        \gamma = \min\left(1.0, \, 0.4 + 0.6 \cdot \frac{|T_{\text{matched}}|}{|T_{\text{prompt}}|}\right), \quad S_{\text{field}} = (\vec{u} \cdot \vec{v}) \cdot \gamma
       </div>
 
-      <h3 id="algo-triggers">7. Tier 3: Saturated Trigger Keywords ($S_{\text{trigger}}$)</h3>
+      <h3 id="sec-triggers">4.3 Tier 3: Saturated Trigger Keywords ($S_{\text{trigger}}$)</h3>
       <p>
-        Policies specify explicit, weighted multi-word phrases or high-signal tokens (e.g., <code>"ssn": 3.0</code>, <code>"sql injection": 3.0</code>, <code>"bypass auth": 2.8</code>).
-        All matching triggers in the prompt are summed and passed through a saturation threshold of $3.0$:
+        Policies specify explicit, weighted multi-word phrases (e.g. <code>"sql injection": 3.0</code>, <code>"bypass auth": 2.8</code>). Matching triggers are summed and passed through a saturation threshold of $3.0$:
       </p>
       <div class="formula-display">
         S_{\text{trigger}} = \min\left(1.0, \, \frac{\sum_{(k, w) \in \text{Matches}} w}{3.0}\right)
       </div>
 
-      <h3 id="algo-fusion">8. Composite Scoring &amp; Confidence Amplification</h3>
+      <h3 id="sec-amplification">4.4 Composite Multi-Signal Fusion &amp; Confidence Amplification</h3>
       <p>
-        The base composite score combines all three tiers:
+        Base linear fusion combines the three tiers:
       </p>
       <div class="formula-display">
         S_{\text{raw}} = 0.35 \cdot S_{\text{morph}} + 0.40 \cdot S_{\text{field}} + 0.25 \cdot S_{\text{trigger}}
       </div>
       <p>
-        If unambiguous high-signal conditions are met, a piece-wise non-linear amplification scales the raw score upward to provide clear separation between benign queries and definitive violations:
+        A non-linear piecewise amplifier eliminates the ambiguous "gray zone" ($55\% - 68\%$) when definitive violation indicators are detected:
       </p>
       <div class="formula-display">
         S_{\text{final}} = \begin{cases}
-          \max\left(S_{\text{raw}}, \, 0.78 + 0.22 \cdot \max(S_{\text{field}}, S_{\text{trigger}})\right) &amp; \text{if } S_{\text{trigger}} \ge 0.8 \land (S_{\text{field}} &gt; 0.3 \lor S_{\text{morph}} &gt; 0.15) \\
-          \max\left(S_{\text{raw}}, \, 0.72 + 0.28 \cdot S_{\text{morph}}\right) &amp; \text{if } S_{\text{field}} &gt; 0.75 \land S_{\text{morph}} &gt; 0.25 \\
+          \max\left(S_{\text{raw}}, \, 0.78 + 0.22 \cdot \max(S_{\text{field}}, S_{\text{trigger}})\right) &amp; \text{if } S_{\text{trigger}} \ge 0.8 \land (S_{\text{field}} > 0.3 \lor S_{\text{morph}} > 0.15) \\
+          \max\left(S_{\text{raw}}, \, 0.72 + 0.28 \cdot S_{\text{morph}}\right) &amp; \text{else if } S_{\text{field}} > 0.75 \land S_{\text{morph}} > 0.25 \\
           S_{\text{raw}} &amp; \text{otherwise}
         \end{cases}
       </div>
-      <p>The output percentage is reported as: $\text{MatchPercentage} = \text{round}(S_{\text{final}} \times 100, 1)$.</p>
-    </section>
 
-    <!-- Module-by-Module Code Walkthrough -->
-    <section id="mod-tokenizer">
-      <h2>Module-by-Module Code Reference</h2>
-
-      <article id="mod-tokenizer">
-        <h3><code>src/semantic_matcher/morphology/tokenizer.py</code></h3>
-        <p>
-          Responsible for string normalization and non-destructive token extraction.
-        </p>
-        <ul>
-          <li><code>normalize_text(text: str) -&gt; str</code>: Executes <code>unicodedata.normalize("NFKC", text)</code> to unify ligature characters (e.g. <code>ﬁ</code> &rarr; <code>fi</code>) and full-width characters into standard representations.</li>
-          <li><code>tokenize(text: str, remove_stopwords: bool = True) -&gt; List[str]</code>: Extracts contiguous sequences of <code>[a-zäöüß0-9]</code>. Filters out tokens with length $\le 1$ and tokens existing within the module's static <code>STOPWORDS</code> set.</li>
-          <li><code>STOPWORDS: Set[str]</code>: A combined static set of 82 English and 78 German function words. Eliminating external library calls (e.g., NLTK) guarantees sub-millisecond execution.</li>
-        </ul>
-      </article>
-
-      <article id="mod-decompounder">
-        <h3><code>src/semantic_matcher/morphology/decompounder.py</code></h3>
-        <p>
-          Implements the West-Germanic compound splitting algorithm.
-        </p>
-        <ul>
-          <li><code>Decompounder.__init__(vocabulary: Optional[Set[str]], min_part_len: int = 3)</code>: Initializes the root lexicon with a base vocabulary of 80 core domain stems across security, corporate, legal, and surveillance categories.</li>
-          <li><code>add_words(words: List[str]) -&gt; None</code>: Enables programmatic ingestion of extra root terms during policy compilation.</li>
-          <li><code>_split_single(word: str) -&gt; Optional[List[str]]</code>: Private recursive function attempting prefix division across indices $i \in [3, |word|-3]$. Evaluates direct splits and interfix-mediated splits against <code>FUGEN = ["s", "es", "en", "n", "er", "e"]</code>.</li>
-          <li><code>split_compound(word: str) -&gt; List[str]</code>: Public entry point. Calls <code>_split_single</code> and flattens multi-part compounds (e.g. 3-part or 4-part compounds). Returns <code>[word]</code> if no split point satisfies lexical verification.</li>
-          <li><code>decompose_tokens(tokens: List[str]) -&gt; List[str]</code>: Iterates over an incoming token list and decomposes any compound tokens in place.</li>
-        </ul>
-      </article>
-
-      <article id="mod-stemmer">
-        <h3><code>src/semantic_matcher/morphology/stemmer.py</code></h3>
-        <p>
-          Applies rule-based suffix reduction without third-party dependencies.
-        </p>
-        <ul>
-          <li><code>STEM_OVERRIDES: Dict[str, str]</code>: Maps 28 common irregular forms to canonical stems (e.g., <code>"mitarbeitern": "mitarbeiter"</code>, <code>"geheimnisse": "geheimnis"</code>).</li>
-          <li><code>GERMAN_SUFFIXES: List[str]</code>: 42 ordered German affixes sorted from longest (<code>-schaften</code>, 9 chars) to shortest (<code>-t</code>, 1 char) to avoid premature sub-suffix truncation.</li>
-          <li><code>ENGLISH_SUFFIXES: List[str]</code>: 32 ordered English derivational affixes.</li>
-          <li><code>stem_word(word: str) -&gt; str</code>: Strips matching suffixes and executes vowel mutation restoration (<code>ä &rarr; a, ö &rarr; o, ü &rarr; u</code>).</li>
-          <li><code>stem_tokens(tokens: List[str]) -&gt; List[str]</code>: Batch helper over a list of tokens.</li>
-        </ul>
-      </article>
-
-      <article id="mod-field-mapper">
-        <h3><code>src/semantic_matcher/semantics/field_mapper.py</code></h3>
-        <p>
-          Calculates vector activations over the 12 semantic fields.
-        </p>
-        <ul>
-          <li><code>LexicalFieldMapper.__init__(fields_data, fields_path)</code>: Ingests <code>lexical_fields.json</code> and compiles dual dictionaries: exact word sets and pre-stemmed word sets for instantaneous lookup.</li>
-          <li><code>compute_field_activation(tokens: List[str]) -&gt; Dict[str, float]</code>: Applies the 3-tier activation kernel (1.0 / 0.8 / 0.5) and normalizes the resulting dictionary via Euclidean $L_2$ norm.</li>
-          <li><code>cosine_similarity(vec1: Dict[str, float], vec2: Dict[str, float]) -&gt; float</code>: Computes dot product $\sum u_i v_i$ clamped between $0.0$ and $1.0$.</li>
-        </ul>
-      </article>
-
-      <article id="mod-indexer">
-        <h3><code>src/semantic_matcher/storage/indexer.py</code></h3>
-        <p>
-          Compiles policies into pre-decomposed representation for zero runtime overhead.
-        </p>
-        <ul>
-          <li><code>PolicyIndexer.__init__(policies_path, fields_path, index_path)</code>: Resolves file paths and instantiates private <code>LexicalFieldMapper</code> and <code>Decompounder</code> instances.</li>
-          <li><code>decompose_policy(policy: Policy) -&gt; PredecomposedPolicy</code>: Concatenates policy name, description, fields, and triggers; tokenizes, decompounds, stems, and computes the normalized $L_2$ activation vector.</li>
-          <li><code>build_and_save_index() -&gt; List[PredecomposedPolicy]</code>: Decomposes all policies and serializes the index to <code>policy_index.json</code>. If the target directory is read-only (e.g., container filesystem), it catches <code>OSError</code> and preserves the in-memory index without failure.</li>
-          <li><code>get_or_load_index(force_rebuild: bool = False)</code>: Reads cached index if available; performs timestamp modification checks (mtime) on source files to auto-recompile when policy files change on disk.</li>
-        </ul>
-      </article>
-
-      <article id="mod-markdown-loader">
-        <h3><code>src/semantic_matcher/storage/markdown_loader.py</code></h3>
-        <p>
-          Enables ingesting policies directly from Markdown files.
-        </p>
-        <ul>
-          <li><code>parse_simple_yaml(yaml_str: str) -&gt; Dict[str, Any]</code>: Zero-dependency state machine parser for YAML frontmatter supporting scalars, nested mappings, and lists.</li>
-          <li><code>parse_markdown_table(table_text: str) -&gt; List[Dict[str, str]]</code>: Parses GitHub-flavored Markdown tables into dictionaries keyed by header column.</li>
-          <li><code>load_policies_from_markdown(path: Union[str, Path]) -&gt; List[Policy]</code>: Traverses single <code>.md</code> files or directories of Markdown documents, extracting policies defined via YAML frontmatter, headers (<code># POL-01: Name</code>), or tables.</li>
-        </ul>
-      </article>
-
-      <article id="mod-oscal-loader">
-        <h3><code>src/semantic_matcher/storage/oscal_loader.py</code> (OSCAL 1.1.0)</h3>
-        <p>
-          Implements bidirectional interoperability with NIST OSCAL (Open Security Controls Assessment Language) v1.0.0 and v1.1.0 JSON standards.
-        </p>
-        <ul>
-          <li><code>is_oscal_catalog(data_or_path) -&gt; bool</code>: Fast structural discriminator verifying whether a JSON file or parsed dictionary is an OSCAL Catalog.</li>
-          <li><code>load_oscal_catalog(data_or_path, default_framework) -&gt; List[Policy]</code>: Recursively parses OSCAL catalogs across arbitrary control hierarchies and groups, mapping control statements, guidance, tags, and parameters to <code>Policy</code> definitions.</li>
-          <li><code>export_to_oscal(policies, title, version) -&gt; Dict[str, Any]</code>: Serializes any collection of active policies into an official NIST OSCAL 1.1.0 Catalog format with UUID generation and property annotations.</li>
-          <li><code>get_oscal_component_definition(version) -&gt; Dict[str, Any]</code>: Emits the official NIST OSCAL Component Definition JSON for <code>semantic-matcher</code>, formally declaring implemented security controls (NIST SP 800-53 SI-4, AC-3, SC-7 and OWASP LLM01-LLM06) for enterprise System Security Plans (SSPs).</li>
-        </ul>
-      </article>
-
-      <article id="mod-matcher">
-        <h3><code>src/semantic_matcher/engine/matcher.py</code> &amp; <code>factory.py</code></h3>
-        <p>
-          The core matching engine and initialization factory.
-        </p>
-        <ul>
-          <li><code>init_engine(rebuild=False, policies_path=None, ...) -&gt; SemanticMatcher</code>: Decoupled factory that discovers default bundled data and manages cached engine instances.</li>
-          <li><code>get_default_data_paths() -&gt; Dict[str, Path]</code>: Resolves package-bundled and repository data paths.</li>
-          <li><code>SemanticMatcher.__init__(policies, field_mapper, decompounder, w_morph=0.35, w_field=0.40, w_trigger=0.25)</code>: Configures weights and pre-loaded policies.</li>
-          <li><code>decompose_prompt(prompt: str) -&gt; DecomposedText</code>: Breaks input prompt into tokens, morphemes, lemmas, and field activation vector.</li>
-          <li><code>match(prompt: str, threshold: float = 0.0) -&gt; List[MatchResult]</code>: Evaluates input against all policies, computes Tversky, Cosine, Damping, Triggers, and Confidence Amplification, returning results sorted descending by match percentage.</li>
-        </ul>
-      </article>
-
-      <article id="mod-models">
-        <h3><code>src/semantic_matcher/models.py</code></h3>
-        <p>
-          Data models defined via standard Python <code>dataclass</code>:
-        </p>
-        <ul>
-          <li><code>Policy</code>: Raw policy specification (<code>policy_id</code>, <code>name</code>, <code>framework</code>, <code>description</code>, <code>primary_fields</code>, <code>trigger_keywords</code>).</li>
-          <li><code>PredecomposedPolicy</code>: Pre-computed lemmas, compounds, and normalized vector representations.</li>
-          <li><code>MatchResult</code>: Complete outcome object containing rank, percentage, sub-scores (<code>morph_score</code>, <code>field_score</code>, <code>trigger_score</code>), contributing tokens, and contributing fields.</li>
-        </ul>
-      </article>
-
-      <article id="mod-guard">
-        <h3><code>src/semantic_matcher/guard.py</code> (v0.2.0)</h3>
-        <p>
-          High-level OOP and functional extension interfaces.
-        </p>
-        <ul>
-          <li><code>PolicyGuard(threshold=70.0, policies=None, framework=None)</code>: Object-oriented guardrail. Methods: <code>check(prompt)</code> (returns <code>Optional[MatchResult]</code>), <code>validate(prompt)</code> (raises <code>PolicyViolationError</code> if matched), and <code>evaluate(prompt)</code> (returns full list).</li>
-          <li><code>check_prompt(prompt, threshold=70.0) -&gt; Optional[MatchResult]</code>: Stateless one-liner for immediate validation.</li>
-          <li><code>evaluate_prompt(prompt, threshold=0.0) -&gt; List[MatchResult]</code>: Stateless helper returning all ranked matches.</li>
-        </ul>
-      </article>
-
-      <article id="mod-decorator">
-        <h3><code>src/semantic_matcher/decorator.py</code></h3>
-        <p>
-          Python decorator for protecting agent entry points and functions.
-        </p>
-        <ul>
-          <li><code>@semantic_matcher(threshold=70.0, action="raise"|"warn"|"block", on_violation=None)</code>: Uses <code>inspect.signature</code> to identify prompt arguments, executes evaluation, and intercepts execution on violation.</li>
-          <li><code>PolicyViolationError</code>: Custom ValueError subclass storing prompt, top match, and full match list.</li>
-        </ul>
-      </article>
-
-      <article id="mod-formatter">
-        <h3><code>src/semantic_matcher/formatter.py</code></h3>
-        <p>
-          UI and terminal formatting inspired by modern developer CLI tools.
-        </p>
-        <ul>
-          <li><code>format_table(results, max_rows=10, use_colors=True)</code>: Generates Unicode box-drawing tables with visual score gauges (<code>▰▰▰▰▱▱</code>). Adapts automatically between <code>rich</code> library panels and standard ANSI escape sequences.</li>
-          <li><code>print_prompt_card()</code> &amp; <code>print_explanation_card()</code>: Renders diagnostic terminal cards showing contributing morphemes and triggered Wortfelder.</li>
-        </ul>
-      </article>
-
-      <article id="mod-cli">
-        <h3><code>src/semantic_matcher/cli.py</code></h3>
-        <p>
-          Click CLI implementation.
-        </p>
-        <ul>
-          <li><code>semantic-matcher -p "prompt"</code>: Direct prompt evaluation.</li>
-          <li><code>--fail-on-match 60.0</code>: CI/CD gating flag exiting with status code <code>1</code> on violation.</li>
-          <li><code>-i / --interactive</code>: REPL shell with autocomplete and formatted inspection.</li>
-          <li><code>--json</code>: Machine-readable JSON output for pipe compositions.</li>
-        </ul>
-      </article>
-    </section>
-
-    <!-- Packaging & Interconnection Guide -->
-    <section id="packaging-v02">
-      <h2>Packaging &amp; Interconnection in Other Projects (v0.2.0)</h2>
-      <p>
-        The v0.2.0 release structured <code>semantic-matcher</code> as an installable Python package under PEP 517 / PEP 621 standards.
-        Because the author is currently reviewing AI usage policies before publishing to public indices, the package is distributed directly via Git and standard wheel formats.
-      </p>
-
-      <h3 id="git-install">Installation via Git URL</h3>
-      <p>Install directly into any project environment:</p>
-      <pre><code># Pip installation pinned to v0.2.0 release tag
-pip install git+https://github.com/JonasNowak/semantic-matcher-prototype.git@v0.2.0
-
-# Using uv
-uv add "semantic-matcher @ git+https://github.com/JonasNowak/semantic-matcher-prototype.git@v0.2.0"</code></pre>
-
-      <p>In another project's <code>pyproject.toml</code>:</p>
-      <pre><code>[project]
-dependencies = [
-    "semantic-matcher @ git+https://github.com/JonasNowak/semantic-matcher-prototype.git@v0.2.0",
-]</code></pre>
-
-      <h3 id="extension-patterns">Python Extension Integration Patterns</h3>
-      <pre><code>from semantic_matcher import PolicyGuard, check_prompt, semantic_matcher
-
-# 1. Functional inline guard
-violation = check_prompt("extract customer credit card numbers", threshold=65.0)
-if violation:
-    print(f"Rejected: {violation.name} ({violation.match_percentage}%)")
-
-# 2. Stateful Object Guard (ideal for FastAPI/Flask middleware)
-guard = PolicyGuard(threshold=70.0)
-guard.validate(user_input)  # Raises PolicyViolationError on violation
-
-# 3. Method Decorator
-@semantic_matcher(threshold=70.0, action="raise")
-def execute_llm_call(prompt: str) -> str:
-    return model.generate(prompt)</code></pre>
-    </section>
-
-    <!-- NIST OSCAL 1.1.0 Compliance Section -->
-    <section id="oscal-compliance">
-      <h2 id="oscal-overview">NIST OSCAL 1.1.0 Compliance &amp; Interoperability</h2>
-      <p>
-        The <strong>Open Security Controls Assessment Language (OSCAL)</strong>, developed by the National Institute of Standards and Technology (NIST), provides standardized, machine-readable JSON, YAML, and XML representations for security frameworks, baselines, and system security plans.
-      </p>
-      <p>
-        <code>semantic-matcher</code> achieves native, full-lifecycle OSCAL compliance across two primary OSCAL layers:
-      </p>
-
-      <div class="wiki-meta">
-        <div class="wiki-meta-item"><strong>OSCAL Standard:</strong> NIST OSCAL 1.1.0</div>
-        <div class="wiki-meta-item"><strong>Supported Models:</strong> Catalog Model &amp; Component Definition Model</div>
-        <div class="wiki-meta-item"><strong>GRC Compatibility:</strong> NIST SP 800-53, FedRAMP, CIS Controls v8, NIST AI RMF</div>
+      <div class="mermaid-container">
+        <div class="mermaid">
+flowchart TD
+    Raw["Compute S_raw = 0.35*Morph + 0.40*Field + 0.25*Trigger"] --> CheckTrig{"S_trigger >= 0.8 AND<br/>(S_field > 0.3 OR S_morph > 0.15)?"}
+    CheckTrig -- Yes --> GateTrig["Amplify via Trigger Gate:<br/>S_final = max(S_raw, 0.78 + 0.22 * max(S_field, S_trigger))<br/>Result: 78.0% - 100.0%"]
+    CheckTrig -- No --> CheckField{"S_field > 0.75 AND S_morph > 0.25?"}
+    CheckField -- Yes --> GateField["Amplify via Field Gate:<br/>S_final = max(S_raw, 0.72 + 0.28 * S_morph)<br/>Result: 72.0% - 100.0%"]
+    CheckField -- No --> KeepRaw["Retain Linear Raw Score:<br/>S_final = S_raw"]
+    
+    GateTrig --> Output["MatchPercentage = round(S_final * 100, 1)"]
+    GateField --> Output
+    KeepRaw --> Output
+        </div>
       </div>
 
-      <h3 id="oscal-catalog">1. Catalog Ingestion &amp; Export</h3>
+      <!-- Worked Numerical Trace Card -->
+      <div class="trace-card" id="sec-numerical-trace">
+        <div class="trace-header">
+          <h4>4.5 End-to-End Worked Numerical Trace</h4>
+          <span class="wiki-badge blue">Real Arithmetic Trace</span>
+        </div>
+        <p>Evaluating prompt: <code>"Überwachen der Mitarbeiter-Tastaturanschläge am Arbeitsplatz"</code> against policy <code>POL-02</code> (Workplace Surveillance):</p>
+
+        <div class="trace-step">
+          <div class="trace-step-title">Step 1: Normalization &amp; Decompounding</div>
+          <p>
+            Tokens extracted: <code>["überwachen", "mitarbeiter", "tastaturanschläge", "arbeitsplatz"]</code>.<br>
+            Decompounder output: <code>["überwachen", "mitarbeiter", "tastatur", "anschläge", "arbeit", "platz"]</code> ($|T_{\text{prompt}}| = 6$).
+          </p>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-step-title">Step 2: Stemming &amp; Vowel Restoration</div>
+          <p>
+            Stemmed lemmas: <code>["überwach", "mitarbeiter", "tastatur", "anschlag", "arbeit", "platz"]</code> ($|L_p| = 6$).<br>
+            Note: <code>"anschläge"</code> mapped to <code>"anschlag"</code> via irregular override, restoring mutated vowel <code>ä &rarr; a</code>.
+          </p>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-step-title">Step 3: Wortfeld Vector Projection (L2)</div>
+          <p>
+            Activations: <code>SURVEILLANCE = 2.8</code>, <code>HR_EMPLOYMENT = 2.8</code>.<br>
+            Norm $\|\vec{A}\|_2 = \sqrt{2.8^2 + 2.8^2} \approx 3.96$. Unit vector: $u_{\text{SURV}} = 0.7071, u_{\text{HR}} = 0.7071$.
+          </p>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-step-title">Step 4: Tier-by-Tier Arithmetic vs POL-02</div>
+          <p>
+            • <strong>Tier 1 (Tversky):</strong> Matched lemmas $|L_p \cap L_{\text{pol}}| = 4$. Unmatched policy lemmas $= 15$.<br>
+            $$S_{\text{morph}} = \frac{4}{6 + 0.05 \times 15} = \frac{4}{6.75} = \mathbf{0.593}$$
+            • <strong>Tier 2 (Damped Cosine):</strong> Raw dot product $= (0.7071 \times 0.7071) + (0.7071 \times 0.7071) = 1.000$.<br>
+            Token ratio $= \frac{4}{6} = 0.667$. Damping $\gamma = \min(1.0, 0.4 + 0.6 \times 0.667) = \mathbf{0.800}$.<br>
+            $$S_{\text{field}} = 1.000 \times 0.800 = \mathbf{0.800}$$
+            • <strong>Tier 3 (Triggers):</strong> Matched <code>"tastaturanschlag" (3.0)</code> and <code>"überwachung" (2.5)</code>. Sum $= 5.5$.<br>
+            $$S_{\text{trigger}} = \min(1.0, 5.5 / 3.0) = \mathbf{1.000}$$
+          </p>
+        </div>
+
+        <div class="trace-step">
+          <div class="trace-step-title">Step 5: Composite Fusion &amp; Calibration</div>
+          <p>
+            Raw composite score:
+            $$S_{\text{raw}} = (0.35 \times 0.593) + (0.40 \times 0.800) + (0.25 \times 1.000) = \mathbf{0.778}$$
+            Trigger condition: $S_{\text{trigger}} = 1.0 \ge 0.8$ and $S_{\text{field}} = 0.800 > 0.3$ is <strong>True</strong>.<br>
+            Amplification: $S_{\text{final}} = \max(0.778, 0.78 + 0.22 \times 1.0) = \mathbf{1.000}$ &rarr; <strong>100.0% Match</strong>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. Storage, Indexing & Policy Formats -->
+    <section id="sec-indexer">
+      <h2>5. Storage, Indexing &amp; Policy Formats</h2>
+
+      <details class="wiki-sources" open>
+        <summary>Relevant source files</summary>
+        <ul>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/storage/indexer.py">src/semantic_matcher/storage/indexer.py</a></code> — Offline pre-decomposition indexer and timestamp cache</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/storage/markdown_loader.py">src/semantic_matcher/storage/markdown_loader.py</a></code> — Zero-dependency YAML frontmatter and table parser</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/storage/oscal_loader.py">src/semantic_matcher/storage/oscal_loader.py</a></code> — NIST OSCAL 1.1.0 catalog ingestion, export, and component definitions</li>
+        </ul>
+      </details>
+
+      <h3>5.1 Pre-Decomposition Indexing &amp; Cache Invalidation</h3>
       <p>
-        Any NIST OSCAL 1.0.0 or 1.1.0 Catalog (such as official NIST SP 800-53 Rev. 5 or FedRAMP baselines) can be ingested directly without translation or preprocessing. The recursive parser extracts control titles, statement prose, guidance, and metadata tags into the internal <code>Policy</code> model:
+        <code>PolicyIndexer</code> pre-computes lemmas, morphemes, and unit vectors for all policies once and serializes them to <code>policy_index.json</code>.
+        At runtime, <code>get_or_load_index()</code> validates file modification timestamps (<code>st_mtime</code>). If source policy files or directories have been modified, it re-compiles the index in memory.
+        In read-only containers (e.g. AWS Lambda or Kubernetes), it catches <code>OSError</code> and preserves the in-memory index without failure.
       </p>
 
+      <h3 id="sec-json-dirs">5.2 Native JSON &amp; Multi-File Directories</h3>
+      <p>
+        Policies can be specified as a single JSON array or as a directory containing multiple individual <code>*.json</code> files. The loader automatically discovers and merges all files.
+      </p>
+
+      <h3 id="sec-markdown">5.3 Zero-Dependency Markdown Policy Parser</h3>
+      <p>
+        Security teams can author policies in Markdown using YAML frontmatter, GitHub-flavored tables, or header sections:
+      </p>
+      <pre><code>---
+policy_id: POL-SEC-01
+name: SQL Injection Defense
+framework: OWASP LLM01
+primary_fields:
+  - SECURITY
+  - CREDENTIALS
+trigger_keywords:
+  sql injection: 3.0
+  sqli: 2.8
+---
+
+# Policy Requirements
+Prohibits generating or injecting unescaped SQL commands into backend databases.</code></pre>
+
+      <h3 id="sec-oscal">5.4 NIST OSCAL 1.1.0 Compliance</h3>
+      <p>
+        Semantic Matcher achieves full bidirectional interoperability with <strong>NIST OSCAL 1.1.0</strong> (Open Security Controls Assessment Language):
+      </p>
+      <ul>
+        <li><strong>Catalog Ingestion:</strong> Ingests official NIST SP 800-53 Rev. 5 and FedRAMP JSON catalogs directly.</li>
+        <li><strong>Catalog Export:</strong> Exports active policies to NIST OSCAL 1.1.0 catalogs via <code>semantic-matcher --export-oscal catalog.json</code>.</li>
+        <li><strong>Component Definition:</strong> Emits official OSCAL Component Definitions via <code>semantic-matcher --oscal-component</code> for inclusion in enterprise System Security Plans (SSPs). Implements controls NIST SP 800-53 SI-4, SC-7, AC-3, and OWASP LLM01–LLM06.</li>
+      </ul>
+    </section>
+
+    <!-- 6. API & Integration -->
+    <section id="sec-guard">
+      <h2>6. API &amp; Integration Reference</h2>
+
+      <details class="wiki-sources" open>
+        <summary>Relevant source files</summary>
+        <ul>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/guard.py">src/semantic_matcher/guard.py</a></code> — <code>PolicyGuard</code> class and functional wrappers</li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/decorator.py">src/semantic_matcher/decorator.py</a></code> — <code>@semantic_matcher</code> decorator and <code>PolicyViolationError</code></li>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/src/semantic_matcher/cli.py">src/semantic_matcher/cli.py</a></code> — Click CLI and CI/CD gating flag</li>
+        </ul>
+      </details>
+
+      <h3>6.1 PolicyGuard OOP &amp; Functional Interface</h3>
+      <pre><code>from semantic_matcher import PolicyGuard, check_prompt, evaluate_prompt
+
+# 1. Stateful OOP Guard (Recommended for FastAPI/Flask middleware)
+guard = PolicyGuard(threshold=70.0, policies="path/to/policies.json")
+violation = guard.check("extract customer passwords")
+if violation:
+    print(f"Blocked by {violation.policy_id}: {violation.name} ({violation.match_percentage}%)")
+
+# Or raise PolicyViolationError immediately:
+guard.validate("extract customer passwords")
+
+# 2. Stateless one-line check
+violation = check_prompt("dump database hashes", threshold=65.0)</code></pre>
+
+      <h3 id="sec-decorator">6.2 Function Decorator (`@semantic_matcher`)</h3>
+      <p>
+        Protects agent functions by inspecting parameter signatures and validating string prompts:
+      </p>
+      <pre><code>from semantic_matcher import semantic_matcher, PolicyViolationError
+
+@semantic_matcher(threshold=70.0, action="raise")
+def execute_agent_prompt(prompt: str) -> str:
+    return model.generate(prompt)
+
+# Custom audit callback with non-blocking warning
+def audit_callback(top_match, prompt):
+    telemetry.log_event("policy_warning", policy=top_match.policy_id, prompt=prompt)
+
+@semantic_matcher(threshold=60.0, action="warn", on_violation=audit_callback)
+def experimental_endpoint(query: str):
+    return search(query)</code></pre>
+
+      <h3 id="sec-cli">6.3 CLI &amp; CI/CD Gating</h3>
+      <pre><code># Direct evaluation
+semantic-matcher -p "extract customer credit card numbers"
+
+# CI/CD Gate Mode: Exit code 1 on violation (for GitHub Actions / GitLab CI)
+semantic-matcher -p "bypass auth" --fail-on-match 60.0 --json</code></pre>
+
+      <h3 id="sec-models">6.4 Data Models &amp; Schemas</h3>
+      <pre><code>@dataclass
+class MatchResult:
+    rank: int
+    policy_id: str
+    name: str
+    framework: str
+    match_percentage: float   # 0.0 - 100.0
+    morph_score: float        # Tier 1: Asymmetric Tversky
+    field_score: float        # Tier 2: Damped Cosine
+    trigger_score: float      # Tier 3: Saturated Triggers
+    contributing_fields: List[str]
+    contributing_tokens: List[str]</code></pre>
+    </section>
+
+    <!-- 7. Verification & Invariants -->
+    <section id="sec-latency">
+      <h2>7. Verification &amp; Invariants</h2>
+
+      <details class="wiki-sources" open>
+        <summary>Relevant source files</summary>
+        <ul>
+          <li><code><a href="https://github.com/JonasNowak/semantic-matcher-prototype/blob/main/tests/">tests/</a></code> — Automated unittest suite across 6 test modules (43 tests)</li>
+        </ul>
+      </details>
+
+      <h3>7.1 Latency Analysis: Microseconds vs. LLM Guardrails</h3>
       <table class="wiki-table">
         <thead>
           <tr>
-            <th>semantic-matcher Model</th>
-            <th>NIST OSCAL 1.1.0 JSON Path</th>
-            <th>Extraction Semantic</th>
+            <th>Guardrail Engine</th>
+            <th>Architecture</th>
+            <th>Inference Latency</th>
+            <th>Determinism</th>
+            <th>Hardware / Network</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><code>policy_id</code></td>
-            <td><code>control.props[name="label"]</code> or <code>control.id</code></td>
-            <td>Human-readable control tag (e.g. <code>AC-2</code>, <code>SI-4</code>).</td>
+            <td><strong>Semantic Matcher</strong></td>
+            <td><strong>Tversky + Wortfeld</strong></td>
+            <td><strong>~0.25 ms (250 µs)</strong></td>
+            <td><strong>100% Deterministic</strong></td>
+            <td><strong>1 CPU core (Offline)</strong></td>
           </tr>
           <tr>
-            <td><code>name</code></td>
-            <td><code>control.title</code></td>
-            <td>Control or policy title.</td>
+            <td>OpenAI Moderation API</td>
+            <td>Remote Neural API</td>
+            <td>150 ms – 350 ms</td>
+            <td>No (API drift)</td>
+            <td>Internet + API Key</td>
           </tr>
           <tr>
-            <td><code>framework</code></td>
-            <td><code>catalog.metadata.title</code> or <code>control.props[name="framework"]</code></td>
-            <td>Compliance standard name.</td>
+            <td>Llama Guard 3 (8B)</td>
+            <td>Local LLM Inference</td>
+            <td>180 ms – 600 ms</td>
+            <td>No (Sampling temp)</td>
+            <td>16 GB VRAM GPU</td>
           </tr>
           <tr>
-            <td><code>description</code></td>
-            <td><code>control.parts[name="statement"|"guidance"].prose</code></td>
-            <td>Normative requirements and prohibitive scope.</td>
-          </tr>
-          <tr>
-            <td><code>primary_fields</code></td>
-            <td><code>control.props[name="primary-field"|"category"]</code></td>
-            <td>Mapped to 12 West-Germanic Wortfelder.</td>
-          </tr>
-          <tr>
-            <td><code>trigger_keywords</code></td>
-            <td><code>control.props[name="trigger-keyword"].value + remarks</code></td>
-            <td>High-weight trigger tokens and saturation multipliers.</td>
+            <td>NeMo Guardrails</td>
+            <td>Colang Hybrid Engine</td>
+            <td>300 ms – 900 ms</td>
+            <td>No (Stochastic)</td>
+            <td>GPU / Cloud API</td>
           </tr>
         </tbody>
       </table>
 
-      <h4>CLI Usage with OSCAL Catalogs:</h4>
-      <pre><code># Evaluate prompts directly against an official OSCAL JSON catalog
-semantic-matcher -P data/oscal_catalog.json -p "attempting to exfiltrate database passwords"
-
-# Export existing policies to standard NIST OSCAL 1.1.0 format
-semantic-matcher --export-oscal my_oscal_catalog.json
-
-# Export custom Markdown policies to NIST OSCAL 1.1.0
-semantic-matcher -P examples/markdown_policies --export-oscal exported_oscal.json</code></pre>
-
-      <h3 id="oscal-component">2. OSCAL Component Definition (SSPs &amp; FedRAMP)</h3>
+      <h3 id="sec-tests">7.3 Test Verification Suite (43 Tests)</h3>
       <p>
-        In enterprise security engineering and FedRAMP authorization, automated tools must define how they implement control baselines inside a <strong>System Security Plan (SSP)</strong>.
-      </p>
-      <p>
-        <code>semantic-matcher</code> ships with an official NIST OSCAL 1.1.0 Component Definition (<code>data/oscal_component_definition.json</code>) defining it as a software security guardrail component:
-      </p>
-
-      <pre><code># Output the official NIST OSCAL 1.1.0 Component Definition
-semantic-matcher --oscal-component
-
-# Retrieve programmatically in Python
-from semantic_matcher import get_oscal_component_definition
-
-comp_def = get_oscal_component_definition()
-print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
-
-      <p>
-        Implemented control mapping declared in the component definition:
+        The test suite executes in under 0.05 seconds via <code>python3 -m unittest discover tests</code>:
       </p>
       <ul>
-        <li><strong>NIST SP 800-53 SI-4 (Information System Monitoring):</strong> Continuous lexical and morphological inspection of natural language prompts.</li>
-        <li><strong>NIST SP 800-53 SC-7 (Boundary Protection):</strong> Guardrail boundary defense preventing credential exfiltration, token dumping, and PII leaks.</li>
-        <li><strong>NIST SP 800-53 AC-3 (Access Enforcement):</strong> Prevention of prompt actions bypassing authorization boundaries or elevating privileges.</li>
-        <li><strong>OWASP Top 10 for LLMs (LLM01, LLM02, LLM06):</strong> Algorithmic mitigation for Prompt Injection, Sensitive Information Disclosure, and Excessive Agency.</li>
+        <li><code>test_matcher.py</code> (11 tests): Normalization, compound splitting, stem overrides, umlaut fixes, Tversky index, damping factor, trigger saturation, and piecewise amplification.</li>
+        <li><code>test_extension.py</code> (8 tests): Packaging exports, public interfaces, default data discovery, and stateless checks.</li>
+        <li><code>test_decorator.py</code> (6 tests): Parameter inspection, action modes (<code>raise</code>, <code>warn</code>, <code>block</code>), callbacks, and exception properties.</li>
+        <li><code>test_markdown_loader.py</code> (7 tests): Zero-dependency YAML frontmatter parser, markdown tables, and directory traversal.</li>
+        <li><code>test_oscal.py</code> (6 tests): NIST OSCAL 1.1.0 catalog parsing, recursive control extraction, export validation, and component definitions.</li>
+        <li><code>test_cli.py</code> (5 tests): CLI execution, custom policies, framework filtering, and CI/CD fail-on-match exit codes.</li>
       </ul>
     </section>
 
-    <!-- Interactive Wiki Sandbox -->
-    <section id="sandbox">
-      <h2>Interactive Pipeline Sandbox</h2>
-      <p>Test the client-side JavaScript implementation of the 4-stage decomposition engine directly in this documentation page:</p>
+    <!-- 8. Interactive Live Sandbox -->
+    <section id="sec-sandbox">
+      <h2>8. Interactive Pipeline Sandbox</h2>
+      <p>Test the client-side JavaScript implementation of the 4-stage decomposition engine in real time:</p>
 
       <div class="sandbox-container">
         <div class="sandbox-header">
-          <h4>Interactive Prompt Input</h4>
+          <h4>Live Prompt Decomposition &amp; Scoring</h4>
           <div class="sandbox-presets">
             <button class="sandbox-preset-btn" onclick="loadSample('surveillance')">German Surveillance</button>
             <button class="sandbox-preset-btn" onclick="loadSample('credentials')">Credit Cards &amp; PII</button>
@@ -1027,7 +1284,7 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
           </div>
         </div>
 
-        <textarea id="sandboxInput" class="sandbox-input" rows="2" placeholder="Enter a prompt in German or English..."></textarea>
+        <textarea id="sandboxInput" class="sandbox-input" rows="2" placeholder="Type a prompt in German, English, or Dutch..."></textarea>
 
         <div class="sandbox-breakdown">
           <div class="sandbox-box">
@@ -1039,11 +1296,11 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
             <div id="boxCompounds" class="sandbox-tokens"></div>
           </div>
           <div class="sandbox-box">
-            <div class="sandbox-box-title">3. Stemmed Lemmas</div>
+            <div class="sandbox-box-title">3. Stemmed Lemmas (Umlauts Restored)</div>
             <div id="boxLemmas" class="sandbox-tokens"></div>
           </div>
           <div class="sandbox-box">
-            <div class="sandbox-box-title">4. Active Wortfelder (L2)</div>
+            <div class="sandbox-box-title">4. Active Wortfelder (L2 Unit Vector)</div>
             <div id="boxFields" class="sandbox-tokens"></div>
           </div>
         </div>
@@ -1051,8 +1308,8 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
         <table class="wiki-table" style="margin-top: 10px;">
           <thead>
             <tr>
-              <th style="width: 80px;">Rank</th>
-              <th style="width: 110px;">Policy ID</th>
+              <th style="width: 70px;">Rank</th>
+              <th style="width: 100px;">Policy ID</th>
               <th>Policy Name &amp; Framework</th>
               <th style="width: 140px;">Scores (M / F / T)</th>
               <th style="width: 110px;">Match</th>
@@ -1063,8 +1320,9 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
       </div>
     </section>
 
+    <!-- Footer -->
     <footer style="margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-faint);">
-      <p>Semantic Matcher Architecture Documentation • Repository: <a href="https://github.com/JonasNowak/semantic-matcher-prototype" target="_blank" style="color: var(--accent); text-decoration: none;">JonasNowak/semantic-matcher-prototype</a> • BSD-3-Clause License</p>
+      <p>Semantic Matcher Architecture DeepWiki • Repository: <a href="https://github.com/JonasNowak/semantic-matcher-prototype" target="_blank" style="color: var(--accent); text-decoration: none;">JonasNowak/semantic-matcher-prototype</a> • BSD-3-Clause License</p>
     </footer>
 
   </main>
@@ -1072,11 +1330,18 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
   <script>
     const LEXICAL_FIELDS = {
       "PRIVACY": ["daten", "datum", "person", "personenbezogen", "dsgvo", "gdpr", "privatsphäre", "adresse", "kontakt", "email", "telefon", "nummer", "gesundheit", "patient", "biometrie", "fingerabdruck", "pii", "identity", "social security", "passport", "confidential"],
-      "CREDENTIALS": ["passwort", "passwörter", "kennwort", "zugang", "login", "pin", "token", "schlüssel", "geheimnis", "authentifizierung", "credentials", "password", "auth", "secret", "apikey"],
       "SURVEILLANCE": ["überwachung", "überwachen", "tastatur", "anschlag", "anschläge", "tastaturanschlag", "bildschirm", "kamera", "webcam", "video", "aufnahme", "log", "logger", "logging", "keylogger", "tracking", "surveillance", "keystroke", "screen", "monitor"],
       "HR_EMPLOYMENT": ["mitarbeiter", "kollege", "personal", "belegschaft", "angestellte", "leistung", "bewertung", "kontrolle", "erfassung", "arbeitsplatz", "kündigung", "lohn", "gehalt", "employee", "workplace", "performance", "productivity"],
+      "SECURITY": ["schwachstelle", "lücke", "angriff", "exploit", "injektion", "sql", "overflow", "überlauf", "puffer", "vulnerability", "cve", "zero-day", "bypass", "payload"],
+      "PROMPT_INJECTION": ["jailbreak", "override", "system prompt", "instructions", "anweisung", "vergiss", "forget", "dan", "leak"],
       "IP_SECRET": ["geschäftsgeheimnis", "betriebsgeheimnis", "quellcode", "entwickler", "patent", "strategie", "finanzen", "trade secret", "intellectual property", "proprietary", "source code"],
-      "EXPLOIT": ["schwachstelle", "lücke", "angriff", "exploit", "injektion", "sql", "overflow", "überlauf", "puffer", "vulnerability", "cve", "zero-day", "bypass", "payload"]
+      "CREDENTIALS": ["passwort", "passwörter", "kennwort", "zugang", "login", "pin", "token", "schlüssel", "geheimnis", "authentifizierung", "credentials", "password", "auth", "secret", "apikey"],
+      "HIGH_STAKES_DECISION": ["automated decision", "scoring", "bonität", "credit", "loan", "darlehen", "entscheidung"],
+      "DECEPTION": ["disinformation", "deepfake", "fälschung", "impersonate", "phishing", "betrug", "hoax", "täuschen"],
+      "LEGAL_COMPLIANCE": ["regulation", "compliance", "audit", "gesetz", "richtlinie", "prüfung", "standard"],
+      "MEDICAL_LEGAL_ADVICE": ["medical", "diagnose", "behandlung", "rezept", "legal", "anwalt", "anlageberatung"],
+      "HARMFUL_OPS": ["weapon", "waffe", "bombe", "sprengstoff", "gift", "cbrn", "synthesize", "terror"],
+      "RESOURCE_ABUSE": ["ddos", "dos", "flood", "scraping", "endlosschleife", "infinite loop", "brute force"]
     };
 
     const POLICIES = [
@@ -1111,7 +1376,7 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
         id: "POL-05",
         name: "Security Exploit & Vulnerability Probing",
         framework: "OWASP LLM01, LLM05, MITRE ATT&CK",
-        fields: ["EXPLOIT", "CREDENTIALS"],
+        fields: ["SECURITY", "CREDENTIALS"],
         lemmas: ["exploit", "vulner", "schwachstel", "lück", "angriff", "attack", "injekt", "sql", "payload", "bypass", "authent", "zugriff", "databas", "datenbank", "dump"],
         compounds: ["exploit", "schwachstelle", "angriff", "injektion", "sql", "payload", "bypass", "auth", "database", "datenbank"],
         triggers: { "exploit": 3.0, "zero-day": 3.0, "sql injection": 3.0, "sqli": 3.0, "bypass auth": 2.8, "buffer overflow": 2.8, "payload": 2.2 }
@@ -1221,7 +1486,7 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
       document.getElementById("boxCompounds").innerHTML = compounds.map(c => `<span class="s-token compound">${c}</span>`).join("") || '<span style="color:var(--text-faint)">—</span>';
       document.getElementById("boxLemmas").innerHTML = lemmas.map(l => `<span class="s-token stem">${l}</span>`).join("") || '<span style="color:var(--text-faint)">—</span>';
 
-      const activeF = Object.entries(fieldActs).filter(([_, v]) => v > 0.1);
+      const activeF = Object.entries(fieldActs).filter(([_, v]) => v > 0.05);
       document.getElementById("boxFields").innerHTML = activeF.map(([f, v]) => `<span class="s-token field">${f} (${v})</span>`).join("") || '<span style="color:var(--text-faint)">—</span>';
 
       const results = [];
@@ -1279,6 +1544,19 @@ print(comp_def["component-definition"]["metadata"]["title"])</code></pre>
       };
       document.getElementById("sandboxInput").value = samples[key] || "";
       executeAnalysis();
+    }
+
+    function filterSidebar(query) {
+      const q = query.toLowerCase();
+      const links = document.querySelectorAll(".sidebar-links li");
+      links.forEach(li => {
+        const text = li.textContent.toLowerCase();
+        li.style.display = text.includes(q) ? "" : "none";
+      });
+    }
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("open");
     }
 
     document.getElementById("sandboxInput").addEventListener("input", executeAnalysis);
